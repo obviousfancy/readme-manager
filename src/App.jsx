@@ -316,7 +316,7 @@ export default function App() {
       id: uid(), name: 'Nuevo Template', emoji: '📝', color: '#6366f1', isDefault: false,
       sections: [
         { id: 'header', title: 'Encabezado', required: true, fields: [{ id: uid(), label: 'Nombre del proyecto', key: 'projectName', type: 'text', placeholder: 'Mi Proyecto', required: true }] },
-        { id: uid(), title: 'Descripción', required: false, fields: [{ id: uid(), label: 'Descripción', key: 'description', type: 'textarea', placeholder: 'Describe tu proyecto...' }] },
+        { id: uid(), title: 'Detalles', required: false, fields: [{ id: uid(), label: 'Descripción', key: 'description', type: 'textarea', placeholder: 'Describe tu proyecto...' }] },
       ]
     };
     setEditing(ns);
