@@ -13,7 +13,7 @@ const deepClone = o => JSON.parse(JSON.stringify(o));
 /* ─────────────── TEMPLATE MANIFEST ─────────────────────────── */
 // Para agregar un nuevo template: añade el archivo JSON a public/templates/
 // y agrega su nombre aquí.
-const TEMPLATE_FILES = ['hw.json', 'api.json', 'mobile.json', 'lib.json', 'uni.json','lessons.json'];
+const TEMPLATE_FILES = ['hw.json', 'api.json', 'mobile.json', 'lib.json', 'uni.json','lesson.json'];
 
 /* ─────────────────── MARKDOWN RENDERER ─────────────────────── */
 function inl(t) {
@@ -78,7 +78,7 @@ function mdToHtml(md) {
 function buildMd(tpl, data) {
   const g = k => (typeof data[k] === 'string' ? data[k] : '').trim();
   const lines = [];
-  const SEC_EMOJIS = { desc: '📝', features: '🚀', tech: '🛠️', install: '⚙️', endpoints: '📡', usage: '💡', api: '📋', results: '📊', pinout: '🔌', screens: '📲', team: '👥' };
+  const SEC_EMOJIS = { desc: '📝', caracteristicas: '🚀', tech: '🛠️', install: '⚙️', endpoints: '📡', usage: '💡', api: '📋', results: '📊', pinout: '🔌', screens: '📲', team: '👥' };
 
   for (const sec of tpl.sections) {
     const hasData = sec.fields.some(fld => {
