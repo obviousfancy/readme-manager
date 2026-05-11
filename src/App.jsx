@@ -78,7 +78,7 @@ function mdToHtml(md) {
 function buildMd(tpl, data) {
   const g = k => (typeof data[k] === 'string' ? data[k] : '').trim();
   const lines = [];
-  const SEC_EMOJIS = { desc: '📝', caracteristicas: '🚀', tech: '🛠️', install: '⚙️', endpoints: '📡', usage: '💡', api: '📋', results: '📊', pinout: '🔌', screens: '📲', team: '👥' };
+  const SEC_EMOJIS = { desc: '📝', features: '🚀', tech: '🛠️', install: '⚙️', endpoints: '📡', usage: '💡', api: '📋', results: '📊', pinout: '🔌', screens: '📲', team: '👥' };
 
   for (const sec of tpl.sections) {
     const hasData = sec.fields.some(fld => {
@@ -315,8 +315,8 @@ export default function App() {
     const ns = {
       id: uid(), name: 'Nuevo Template', emoji: '📝', color: '#6366f1', isDefault: false,
       sections: [
-        { id: 'header', title: 'Encabezado', required: true, fields: [{ id: uid(), label: 'Nombre del proyecto', key: 'projectName', type: 'text', placeholder: 'Mi Proyecto', required: true }] },
-        { id: uid(), title: 'Detalles', required: false, fields: [{ id: uid(), label: 'Descripción', key: 'description', type: 'textarea', placeholder: 'Describe tu proyecto...' }] },
+        { id: 'header', title: 'Titulo del markdown', required: true, fields: [{ id: uid(), label: 'Nombre del proyecto', key: 'projectName', type: 'text', placeholder: 'Mi Proyecto', required: true }] },
+        { id: uid(), title: 'Descripción', required: false, fields: [{ id: uid(), label: 'Descripción', key: 'description', type: 'textarea', placeholder: 'Describe tu proyecto...' }] },
       ]
     };
     setEditing(ns);
