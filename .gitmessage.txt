@@ -1,0 +1,5 @@
+<tipo>: <descripción>
+
+   # Tipos: feat, fix, docs, refactor, hw, assets
+   # - Recordar: Descripción en minúsculas y modo imperativo.
+   

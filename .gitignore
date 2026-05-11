@@ -1,0 +1,31 @@
+# Compilados y Binarios
+*.o
+*.elf
+*.hex
+*.bin
+*.out
+/build/
+/Debug/
+/Release/
+
+# Archivos de IDE (STM32CubeIDE, Keil, VS Code)
+.metadata/
+.settings/
+.project
+.cproject
+.mxproject
+*.launch
+.vscode/
+*.uvoptx
+*.uvprojx
+
+# Archivos temporales de Diseño Electrónico (KiCad/Altium)
+*-backups/
+*.kicad_pcb-bak
+*.sch-bak
+*.lck
+*.tmp
+
+# Archivos del Sistema
+.DS_Store
+Thumbs.db
