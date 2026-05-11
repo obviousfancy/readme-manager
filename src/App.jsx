@@ -207,7 +207,7 @@ function loadLS() {
   catch { return {}; }
 }
 function saveLS(data) {
-  try { localStorage.setItem(LS_KEY, JSON.stringify(data)); } catch { }
+  try { localStorage.setItem(LS_KEY, JSON.stringify(data)); } catch { /* ignore */ }
 }
 
 /* ─────────────────── GLOBAL STYLES ─────────────────────────── */
@@ -813,7 +813,7 @@ function TemplateEditor({ template, onSave, onCancel }) {
 }
 
 /* ─────────────────── IMAGE FIELD EDITOR (Generator) ─────────── */
-function ImageFieldEditor({ field, value, onChange }) {
+function ImageFieldEditor({ value, onChange }) {
   const img = value && typeof value === 'object' ? value : { url: '', alt: '', caption: '', center: true };
   const set = (k, v) => onChange({ ...img, [k]: v });
 
@@ -979,7 +979,7 @@ function Generator({ template, onBack }) {
   const html = mdToHtml(md);
 
   const copy = async () => {
-    try { await navigator.clipboard.writeText(md); } catch { }
+    try { await navigator.clipboard.writeText(md); } catch { /* ignore */ }
     setCopied(true); setTimeout(() => setCopied(false), 2000);
   };
 
