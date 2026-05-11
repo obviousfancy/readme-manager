@@ -1,0 +1,60 @@
+{
+  "id": "uni",
+  "name": "Proyecto Universitario",
+  "emoji": "🎓",
+  "color": "#f59e0b",
+  "isDefault": true,
+  "sections": [
+    {
+      "id": "header",
+      "title": "Encabezado",
+      "required": true,
+      "fields": [
+        { "id": "uni_f1", "label": "Nombre del proyecto", "key": "projectName", "type": "text", "placeholder": "Análisis de sentimientos con NLP", "required": true },
+        { "id": "uni_f2", "label": "Materia / Curso", "key": "course", "type": "text", "placeholder": "PLN - Procesamiento de Lenguaje Natural 2025" },
+        { "id": "uni_f3", "label": "Universidad / Carrera", "key": "university", "type": "text", "placeholder": "IPN - Ingeniería en Sistemas Computacionales" }
+      ]
+    },
+    {
+      "id": "desc",
+      "title": "Descripción y Objetivo",
+      "required": true,
+      "fields": [
+        { "id": "uni_f4", "label": "Objetivo del proyecto", "key": "objective", "type": "textarea", "placeholder": "El objetivo de este proyecto es desarrollar un sistema capaz de...", "required": true },
+        { "id": "uni_f5", "label": "Metodología aplicada", "key": "methodology", "type": "textarea", "placeholder": "Se utilizó una metodología ágil con iteraciones de dos semanas..." }
+      ]
+    },
+    {
+      "id": "tech",
+      "title": "Tecnologías",
+      "required": true,
+      "fields": [
+        { "id": "uni_f6", "label": "Lenguajes / Frameworks", "key": "tech", "type": "text", "placeholder": "Python, TensorFlow, NLTK, scikit-learn", "required": true },
+        { "id": "uni_f7", "label": "Dataset / Fuente de datos", "key": "dataset", "type": "text", "placeholder": "Twitter API, Kaggle Sentiment140" }
+      ]
+    },
+    {
+      "id": "team",
+      "title": "Equipo",
+      "required": false,
+      "fields": [
+        {
+          "id": "uni_f8",
+          "label": "Integrantes del equipo",
+          "key": "teamTable",
+          "type": "table",
+          "columns": ["Nombre", "Rol", "GitHub"],
+          "placeholder": "Agrega los integrantes del equipo"
+        }
+      ]
+    },
+    {
+      "id": "results",
+      "title": "Resultados",
+      "required": false,
+      "fields": [
+        { "id": "uni_f9", "label": "Resultados obtenidos", "key": "results", "type": "textarea", "placeholder": "Se logró una accuracy del 92% en el conjunto de prueba..." }
+      ]
+    }
+  ]
+}

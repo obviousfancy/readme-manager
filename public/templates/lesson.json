@@ -1,0 +1,103 @@
+{
+  "id": "lesson",
+  "name": "Lección Técnica (DevLab)",
+  "emoji": "📖",
+  "color": "#06b6d4",
+  "isDefault": false,
+  "sections": [
+    {
+      "id": "header",
+      "title": "Encabezado",
+      "required": true,
+      "fields": [
+        { "id": "les_f1", "label": "Nombre del proyecto", "key": "projectName", "type": "text", "placeholder": "Ej: Capítulo 1: Módulos Relevadores", "required": true },
+        { "id": "les_f2", "label": "Módulo / Componente principal", "key": "module", "type": "text", "placeholder": "Ej: G6K-2G-Y-TR · UNIT DevLab Multi Hub Shield" }
+      ]
+    },
+    {
+      "id": "intro",
+      "title": "Introducción",
+      "required": true,
+      "fields": [
+        { "id": "les_f3", "label": "Descripción del componente", "key": "description", "type": "textarea", "placeholder": "Describe qué hace el componente y para qué sirve en el contexto del módulo...", "required": true },
+        { "id": "les_f4", "label": "Capacidades / Límites de operación (una por línea)", "key": "limits", "type": "list", "placeholder": "Corriente Alterna (AC): Hasta 125 V / 0.3 A\nCorriente Directa (DC): Hasta 30 V / 1 A" },
+        { "id": "les_f5", "label": "Nota de seguridad", "key": "safetyNote", "type": "text", "placeholder": "Nunca excedas estos valores, ya que podrías dañar el módulo o el microcontrolador." }
+      ]
+    },
+    {
+      "id": "prereq",
+      "title": "Conocimientos Previos",
+      "required": false,
+      "fields": [
+        { "id": "les_f6", "label": "Conceptos necesarios (uno por línea)", "key": "concepts", "type": "list", "placeholder": "Entradas y salidas digitales en microcontroladores\nNiveles lógicos: ALTO (1) y BAJO (0)\nPullup y pulldown internos" },
+        {
+          "id": "les_f7",
+          "label": "Tabla de niveles lógicos",
+          "key": "logicTable",
+          "type": "table",
+          "columns": ["Nivel Lógico", "ALTO (1 Lógico)", "BAJO (0 Lógico)"],
+          "placeholder": "Define la tabla de niveles lógicos del MCU"
+        }
+      ]
+    },
+    {
+      "id": "specs",
+      "title": "Especificaciones Técnicas",
+      "required": true,
+      "fields": [
+        {
+          "id": "les_f8",
+          "label": "Tabla de especificaciones",
+          "key": "specsTable",
+          "type": "table",
+          "columns": ["Parámetro", "Descripción", "Min", "Máx", "Unidad"],
+          "placeholder": "Llena los parámetros eléctricos del componente"
+        }
+      ]
+    },
+    {
+      "id": "considerations",
+      "title": "Consideraciones de Uso",
+      "required": false,
+      "fields": [
+        { "id": "les_f9", "label": "Consideraciones importantes (una por línea)", "key": "considerations", "type": "list", "placeholder": "VCC debe coincidir con el nivel lógico del microcontrolador\nLas bobinas siempre deben alimentarse con 5 V" }
+      ]
+    },
+    {
+      "id": "features",
+      "title": "Características",
+      "required": false,
+      "fields": [
+        { "id": "les_f10", "label": "Características del módulo (una por línea)", "key": "features", "type": "list", "placeholder": "Doble Canal Independiente: Dos canales aislados para control autónomo\nCompatibilidad de Voltaje: Soporta 3.3 V y 5 V\nLógica Active-Low: Se activa con 0 lógico (0 V)" }
+      ]
+    },
+    {
+      "id": "practice",
+      "title": "Práctica de Ejemplo",
+      "required": false,
+      "fields": [
+        { "id": "les_f11", "label": "Objetivo de la práctica", "key": "practiceGoal", "type": "textarea", "placeholder": "Describe qué se busca demostrar con la práctica..." },
+        { "id": "les_f12", "label": "Materiales (uno por línea)", "key": "materials", "type": "list", "placeholder": "UNIT DevLab: Multi Hub Shield\nJumpers Hembra - Hembra\nUNIT ESP32 Pulsar C6\nPar de Hélices con Motor CC" },
+        {
+          "id": "les_f13",
+          "label": "Tabla de conexiones / Pinout",
+          "key": "pinoutTable",
+          "type": "table",
+          "columns": ["Pin MCU", "Pin Módulo", "Función", "Notas"],
+          "placeholder": "Define las conexiones entre el MCU y el módulo"
+        },
+        { "id": "les_f14", "label": "Descripción de conexiones", "key": "connectionsDesc", "type": "textarea", "placeholder": "Explica el comportamiento del circuito: qué pasa al presionar el botón, al soltar, etc." },
+        { "id": "les_f15", "label": "Código de funcionamiento", "key": "codeExample", "type": "textarea", "placeholder": "Pega aquí el código de la práctica (Arduino, MicroPython, etc.)" },
+        { "id": "les_f16", "label": "Nota sobre el código", "key": "codeNote", "type": "text", "placeholder": "Ej: Los pines están definidos para el UNIT ESP32 Pulsar C6. Verifica el mapeo si usas otro MCU." }
+      ]
+    },
+    {
+      "id": "conclusions",
+      "title": "Conclusiones",
+      "required": false,
+      "fields": [
+        { "id": "les_f17", "label": "Conclusiones de la lección", "key": "conclusions", "type": "textarea", "placeholder": "Resume lo aprendido y el valor del componente en aplicaciones reales..." }
+      ]
+    }
+  ]
+}

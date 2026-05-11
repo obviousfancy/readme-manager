@@ -1,0 +1,68 @@
+{
+  "id": "hw",
+  "name": "Hardware / Embebido",
+  "emoji": "⚙️",
+  "color": "#f97316",
+  "isDefault": true,
+  "sections": [
+    {
+      "id": "header",
+      "title": "Encabezado",
+      "required": true,
+      "fields": [
+        { "id": "hw_f1", "label": "Nombre del proyecto", "key": "projectName", "type": "text", "placeholder": "Ej: SmartLight ESP32", "required": true },
+        { "id": "hw_f2", "label": "Estado", "key": "status", "type": "text", "placeholder": "Completed / In Progress / WIP" }
+      ]
+    },
+    {
+      "id": "desc",
+      "title": "Descripción",
+      "required": true,
+      "fields": [
+        { "id": "hw_f3", "label": "Descripción técnica", "key": "description", "type": "textarea", "placeholder": "Sistema embebido basado en STM32 para procesamiento de señales digitales...", "required": true }
+      ]
+    },
+    {
+      "id": "features",
+      "title": "Características",
+      "required": true,
+      "fields": [
+        { "id": "hw_f4", "label": "Características (una por línea)", "key": "features", "type": "list", "placeholder": "Procesamiento en tiempo real: FFT\nDiseño de PCB 2 capas\nInterfaz OLED por I2C", "required": true }
+      ]
+    },
+    {
+      "id": "tech",
+      "title": "Tecnologías",
+      "required": true,
+      "fields": [
+        { "id": "hw_f5", "label": "Lenguajes", "key": "languages", "type": "text", "placeholder": "C / C++ / VHDL" },
+        { "id": "hw_f6", "label": "Hardware", "key": "hardware", "type": "text", "placeholder": "STM32H7, ESP32, Sensores XYZ" },
+        { "id": "hw_f7", "label": "Herramientas", "key": "tools", "type": "text", "placeholder": "KiCad, STM32CubeIDE, MATLAB" }
+      ]
+    },
+    {
+      "id": "pinout",
+      "title": "Pinout / Conexiones",
+      "required": false,
+      "fields": [
+        {
+          "id": "hw_f8",
+          "label": "Tabla de conexiones",
+          "key": "pinoutTable",
+          "type": "table",
+          "columns": ["Pin MCU", "Función", "Periférico", "Notas"],
+          "placeholder": "Agrega las conexiones del hardware"
+        }
+      ]
+    },
+    {
+      "id": "install",
+      "title": "Instalación",
+      "required": false,
+      "fields": [
+        { "id": "hw_f9", "label": "URL del repositorio", "key": "repoUrl", "type": "text", "placeholder": "https://github.com/user/repo" },
+        { "id": "hw_f10", "label": "IDE / Entorno", "key": "ide", "type": "text", "placeholder": "STM32CubeIDE" }
+      ]
+    }
+  ]
+}
