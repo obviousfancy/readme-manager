@@ -1,0 +1,52 @@
+{
+  "id": "api",
+  "name": "REST API / Backend",
+  "emoji": "🌐",
+  "color": "#3b82f6",
+  "isDefault": true,
+  "sections": [
+    {
+      "id": "header",
+      "title": "Encabezado",
+      "required": true,
+      "fields": [
+        { "id": "api_f1", "label": "Nombre de la API", "key": "projectName", "type": "text", "placeholder": "Ej: UserAuth API v2", "required": true },
+        { "id": "api_f2", "label": "Descripción", "key": "description", "type": "textarea", "placeholder": "API REST para autenticación y gestión de usuarios...", "required": true }
+      ]
+    },
+    {
+      "id": "tech",
+      "title": "Stack Tecnológico",
+      "required": true,
+      "fields": [
+        { "id": "api_f3", "label": "Framework / Lenguaje", "key": "framework", "type": "text", "placeholder": "Node.js + Express / FastAPI / Spring Boot", "required": true },
+        { "id": "api_f4", "label": "Base de datos", "key": "database", "type": "text", "placeholder": "PostgreSQL, Redis" },
+        { "id": "api_f5", "label": "Autenticación", "key": "auth", "type": "text", "placeholder": "JWT, OAuth2" }
+      ]
+    },
+    {
+      "id": "endpoints",
+      "title": "Endpoints",
+      "required": true,
+      "fields": [
+        {
+          "id": "api_f6",
+          "label": "Tabla de endpoints",
+          "key": "endpointsTable",
+          "type": "table",
+          "columns": ["Método", "Ruta", "Descripción", "Auth"],
+          "placeholder": "Define los endpoints de la API"
+        }
+      ]
+    },
+    {
+      "id": "install",
+      "title": "Instalación",
+      "required": true,
+      "fields": [
+        { "id": "api_f7", "label": "URL del repositorio", "key": "repoUrl", "type": "text", "placeholder": "https://github.com/user/repo" },
+        { "id": "api_f8", "label": "Variables de entorno (una por línea)", "key": "envVars", "type": "list", "placeholder": "DATABASE_URL=postgresql://...\nJWT_SECRET=your_secret\nPORT=3000" }
+      ]
+    }
+  ]
+}

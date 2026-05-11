@@ -1,0 +1,49 @@
+{
+  "id": "lib",
+  "name": "Librería Open Source",
+  "emoji": "📦",
+  "color": "#8b5cf6",
+  "isDefault": true,
+  "sections": [
+    {
+      "id": "header",
+      "title": "Encabezado",
+      "required": true,
+      "fields": [
+        { "id": "lib_f1", "label": "Nombre", "key": "projectName", "type": "text", "placeholder": "Ej: react-smooth-scroll", "required": true },
+        { "id": "lib_f2", "label": "Tagline (una línea)", "key": "tagline", "type": "text", "placeholder": "Zero-dependency scroll animation library for React", "required": true }
+      ]
+    },
+    {
+      "id": "install",
+      "title": "Instalación",
+      "required": true,
+      "fields": [
+        { "id": "lib_f3", "label": "Comando de instalación", "key": "installCmd", "type": "text", "placeholder": "npm install my-library", "required": true }
+      ]
+    },
+    {
+      "id": "usage",
+      "title": "Uso Básico",
+      "required": true,
+      "fields": [
+        { "id": "lib_f4", "label": "Ejemplo de código", "key": "codeExample", "type": "textarea", "placeholder": "import { myFn } from 'my-lib';\n\nmyFn({ option: true });" }
+      ]
+    },
+    {
+      "id": "api",
+      "title": "API / Props",
+      "required": false,
+      "fields": [
+        {
+          "id": "lib_f5",
+          "label": "Tabla de props / parámetros",
+          "key": "propsTable",
+          "type": "table",
+          "columns": ["Prop", "Tipo", "Default", "Descripción"],
+          "placeholder": "Define las props de la librería"
+        }
+      ]
+    }
+  ]
+}

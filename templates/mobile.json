@@ -1,0 +1,60 @@
+{
+  "id": "mobile",
+  "name": "App Móvil",
+  "emoji": "📱",
+  "color": "#10b981",
+  "isDefault": true,
+  "sections": [
+    {
+      "id": "header",
+      "title": "Encabezado",
+      "required": true,
+      "fields": [
+        { "id": "mob_f1", "label": "Nombre de la app", "key": "projectName", "type": "text", "placeholder": "Ej: HexConverter", "required": true },
+        { "id": "mob_f2", "label": "Descripción", "key": "description", "type": "textarea", "placeholder": "App móvil para conversión de valores hexadecimales en debugging de MCU...", "required": true }
+      ]
+    },
+    {
+      "id": "tech",
+      "title": "Plataforma y Tecnologías",
+      "required": true,
+      "fields": [
+        { "id": "mob_f3", "label": "Plataforma", "key": "platform", "type": "text", "placeholder": "Android / iOS / Cross-platform", "required": true },
+        { "id": "mob_f4", "label": "Lenguaje / Framework", "key": "framework", "type": "text", "placeholder": "Kotlin / Swift / Flutter / React Native", "required": true },
+        { "id": "mob_f5", "label": "Servicios externos", "key": "services", "type": "text", "placeholder": "Firebase, Google Maps API" }
+      ]
+    },
+    {
+      "id": "features",
+      "title": "Funcionalidades",
+      "required": true,
+      "fields": [
+        { "id": "mob_f6", "label": "Funcionalidades (una por línea)", "key": "features", "type": "list", "placeholder": "Conversión en tiempo real\nSoporte para múltiples bases\nModo offline", "required": true }
+      ]
+    },
+    {
+      "id": "screens",
+      "title": "Pantallas",
+      "required": false,
+      "fields": [
+        {
+          "id": "mob_f7",
+          "label": "Tabla de pantallas",
+          "key": "screensTable",
+          "type": "table",
+          "columns": ["Pantalla", "Descripción", "Navegación"],
+          "placeholder": "Describe cada pantalla de la app"
+        }
+      ]
+    },
+    {
+      "id": "install",
+      "title": "Instalación",
+      "required": false,
+      "fields": [
+        { "id": "mob_f8", "label": "URL del repositorio", "key": "repoUrl", "type": "text", "placeholder": "https://github.com/user/repo" },
+        { "id": "mob_f9", "label": "Requisitos mínimos", "key": "requirements", "type": "text", "placeholder": "Android 8.0+ / iOS 14+" }
+      ]
+    }
+  ]
+}
