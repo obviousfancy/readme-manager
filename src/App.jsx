@@ -13,7 +13,7 @@ const deepClone = o => JSON.parse(JSON.stringify(o));
 /* ─────────────── TEMPLATE MANIFEST ─────────────────────────── */
 // Para agregar un nuevo template: añade el archivo JSON a public/templates/
 // y agrega su nombre aquí.
-const TEMPLATE_FILES = ['hw.json', 'api.json', 'mobile.json', 'lib.json', 'uni.json','lesson.json'];
+const TEMPLATE_FILES = ['hw.json', 'api.json', 'mobile.json', 'lib.json', 'uni.json'];
 
 /* ─────────────────── MARKDOWN RENDERER ─────────────────────── */
 function inl(t) {
@@ -83,10 +83,13 @@ function buildMd(tpl, data) {
   for (const sec of tpl.sections) {
     const hasData = sec.fields.some(fld => {
       if (fld.type === 'table') {
-        const rows = data[fld.key];
-        return Array.isArray(rows) && rows.some(r => r.some(c => c.trim()));
+        const d = data[fld.key];
+        if (!d) return false;
+        const rows = Array.isArray(d) ? d : (d.rows || []);
+        return rows.some(r => r.some(c => c.trim()));
       }
-      return g(fld.key);
+      if (fld.type === 'image') return !!(data[fld.key]?.url);
+      return !!(typeof data[fld.key] === 'string' ? data[fld.key] : '').trim();
     });
     if (!hasData) continue;
 
@@ -136,15 +139,20 @@ function buildMd(tpl, data) {
 
         // Table type
         if (fld.type === 'table') {
-          const rows = data[fld.key];
-          if (!Array.isArray(rows) || !rows.some(r => r.some(c => c.trim()))) continue;
+          const d = data[fld.key];
+          if (!d) continue;
+          // Supports both old format (array) and new format ({cols, rows})
+          const rows = Array.isArray(d) ? d : (d.rows || []);
+          const cols = (Array.isArray(d) ? fld.columns : (d.cols || fld.columns)) || [];
+          if (!rows.some(r => r.some(c => c.trim()))) continue;
           if (acc.length) { lines.push(...acc, ''); acc = []; }
-          const cols = fld.columns || [];
           lines.push(`| ${cols.join(' | ')} |`);
           lines.push(`| ${cols.map(() => '---').join(' | ')} |`);
           rows.forEach(row => {
             if (row.some(c => c.trim())) {
-              lines.push(`| ${row.map(c => c.trim() || '—').join(' | ')} |`);
+              // Pad or trim row to match cols length
+              const padded = cols.map((_, i) => (row[i] || '').trim() || '—');
+              lines.push(`| ${padded.join(' | ')} |`);
             }
           });
           lines.push('');
@@ -207,7 +215,7 @@ function loadLS() {
   catch { return {}; }
 }
 function saveLS(data) {
-  try { localStorage.setItem(LS_KEY, JSON.stringify(data)); } catch { /* ignore */ }
+  try { localStorage.setItem(LS_KEY, JSON.stringify(data)); } catch { }
 }
 
 /* ─────────────────── GLOBAL STYLES ─────────────────────────── */
@@ -277,7 +285,7 @@ export default function App() {
       const fetched = await Promise.all(
         TEMPLATE_FILES.map(async (file) => {
           try {
-            const r = await fetch(`/templates/${file}`);
+            const r = await fetch(`${import.meta.env.BASE_URL}templates/${file}`);
             const tpl = await r.json();
             // Apply user overrides if they exist
             return overrides[tpl.id] ? { ...tpl, ...overrides[tpl.id], isDefault: true } : tpl;
@@ -315,7 +323,7 @@ export default function App() {
     const ns = {
       id: uid(), name: 'Nuevo Template', emoji: '📝', color: '#6366f1', isDefault: false,
       sections: [
-        { id: 'header', title: 'Titulo del markdown', required: true, fields: [{ id: uid(), label: 'Nombre del proyecto', key: 'projectName', type: 'text', placeholder: 'Mi Proyecto', required: true }] },
+        { id: 'header', title: 'Encabezado', required: true, fields: [{ id: uid(), label: 'Nombre del proyecto', key: 'projectName', type: 'text', placeholder: 'Mi Proyecto', required: true }] },
         { id: uid(), title: 'Descripción', required: false, fields: [{ id: uid(), label: 'Descripción', key: 'description', type: 'textarea', placeholder: 'Describe tu proyecto...' }] },
       ]
     };
@@ -813,7 +821,7 @@ function TemplateEditor({ template, onSave, onCancel }) {
 }
 
 /* ─────────────────── IMAGE FIELD EDITOR (Generator) ─────────── */
-function ImageFieldEditor({ value, onChange }) {
+function ImageFieldEditor({ field, value, onChange }) {
   const img = value && typeof value === 'object' ? value : { url: '', alt: '', caption: '', center: true };
   const set = (k, v) => onChange({ ...img, [k]: v });
 
@@ -861,51 +869,28 @@ function ImageFieldEditor({ value, onChange }) {
 
 /* ─────────────────── TABLE FIELD EDITOR (Generator) ─────────── */
 function TableFieldEditor({ field, value, onChange }) {
-  // cols y rows viven en estado local para poder editarlos independientemente
-  const [cols, setCols] = useState(() => field.columns?.length ? [...field.columns] : ['Columna 1']);
-  const [rows, setRows] = useState(() => {
+  const initCols = () => {
+    if (value && !Array.isArray(value) && value.cols?.length) return [...value.cols];
+    return field.columns?.length ? [...field.columns] : ['Columna 1'];
+  };
+  const initRows = (c) => {
+    if (value && !Array.isArray(value) && value.rows?.length) return value.rows;
     if (Array.isArray(value) && value.length > 0) return value;
-    const c = field.columns?.length ? field.columns : ['Columna 1'];
     return [c.map(() => '')];
-  });
-
-  // Sincroniza hacia arriba cada vez que cambian cols o rows
-  const sync = (nextCols, nextRows) => {
-    setCols(nextCols);
-    setRows(nextRows);
-    onChange(nextRows);
   };
 
-  const setCell = (ri, ci, val) => {
-    const next = rows.map(r => [...r]);
-    next[ri][ci] = val;
-    sync(cols, next);
-  };
+  const [cols, setCols] = useState(initCols);
+  const [rows, setRows] = useState(() => { const c = initCols(); return initRows(c); });
 
-  const setColName = (ci, val) => {
-    const next = [...cols];
-    next[ci] = val;
-    setCols(next); // solo el header, no dispara onChange
-  };
+  // Siempre sube {cols, rows} — buildMd usa los cols del dato, no del template
+  const sync = (nc, nr) => { setCols(nc); setRows(nr); onChange({ cols: nc, rows: nr }); };
 
-  const addRow = () => sync(cols, [...rows, cols.map(() => '')]);
-  const delRow = (ri) => {
-    if (rows.length <= 1) return;
-    sync(cols, rows.filter((_, i) => i !== ri));
-  };
-
-  const addCol = () => {
-    const nextCols = [...cols, `Col ${cols.length + 1}`];
-    const nextRows = rows.map(r => [...r, '']);
-    sync(nextCols, nextRows);
-  };
-
-  const delCol = (ci) => {
-    if (cols.length <= 1) return;
-    const nextCols = cols.filter((_, i) => i !== ci);
-    const nextRows = rows.map(r => r.filter((_, i) => i !== ci));
-    sync(nextCols, nextRows);
-  };
+  const setCell  = (ri, ci, val) => { const n = rows.map(r=>[...r]); n[ri][ci]=val; sync(cols, n); };
+  const setColName = (ci, val)   => { const n=[...cols]; n[ci]=val; sync(n, rows); };
+  const addRow   = ()            => sync(cols, [...rows, cols.map(()=>'')]);
+  const delRow   = (ri)          => { if(rows.length<=1)return; sync(cols, rows.filter((_,i)=>i!==ri)); };
+  const addCol   = ()            => sync([...cols,`Col ${cols.length+1}`], rows.map(r=>[...r,'']));
+  const delCol   = (ci)          => { if(cols.length<=1)return; sync(cols.filter((_,i)=>i!==ci), rows.map(r=>r.filter((_,i)=>i!==ci))); };
 
   return (
     <div style={{ marginBottom: '2px' }}>
@@ -914,7 +899,7 @@ function TableFieldEditor({ field, value, onChange }) {
           <thead>
             <tr>
               {cols.map((col, ci) => (
-                <th key={ci} style={{ position: 'relative', padding: '0' }}>
+                <th key={ci} style={{ padding: '0' }}>
                   <div style={{ display: 'flex', alignItems: 'center', padding: '5px 6px', gap: '4px' }}>
                     <input
                       value={col}
@@ -930,7 +915,6 @@ function TableFieldEditor({ field, value, onChange }) {
                   </div>
                 </th>
               ))}
-              {/* Botón agregar columna en el header */}
               <th style={{ width: '36px', background: '#0d0d0f' }}>
                 <button onClick={addCol} title="Agregar columna"
                   style={{ background: 'none', border: 'none', color: '#3f3f46', cursor: 'pointer', padding: '4px', display: 'flex', alignItems: 'center', justifyContent: 'center', width: '100%' }}
@@ -944,14 +928,10 @@ function TableFieldEditor({ field, value, onChange }) {
             {rows.map((row, ri) => (
               <tr key={ri}>
                 {cols.map((_, ci) => (
-                  <td key={ci}>
-                    <input value={row[ci] || ''} onChange={e => setCell(ri, ci, e.target.value)} placeholder="—" />
-                  </td>
+                  <td key={ci}><input value={row[ci] || ''} onChange={e => setCell(ri, ci, e.target.value)} placeholder="—" /></td>
                 ))}
                 <td style={{ textAlign: 'center', background: '#0d0d0f' }}>
-                  <button className="del-row" onClick={() => delRow(ri)} title="Eliminar fila">
-                    <MinusCircle size={13} />
-                  </button>
+                  <button className="del-row" onClick={() => delRow(ri)} title="Eliminar fila"><MinusCircle size={13} /></button>
                 </td>
               </tr>
             ))}
@@ -970,133 +950,213 @@ function TableFieldEditor({ field, value, onChange }) {
 
 /* ─────────────────── GENERATOR ─────────────────────────────── */
 function Generator({ template, onBack }) {
-  const [fd, setFd] = useState({});
-  const [panel, setPanel] = useState('preview');
+  const [tpl, setTpl]       = useState(() => deepClone(template)); // copia local editable
+  const [fd, setFd]         = useState({});
+  const [panel, setPanel]   = useState('preview');
   const [copied, setCopied] = useState(false);
+  const [editMode, setEditMode] = useState(false);
 
   const setVal = (k, v) => setFd(p => ({ ...p, [k]: v }));
-  const md = buildMd(template, fd);
+  const md  = buildMd(tpl, fd);
   const html = mdToHtml(md);
 
+  // ── edición en vivo del template ──────────────────────────────
+  const addSec = () => {
+    const ns = { id: uid(), title: 'Nueva Sección', required: false, fields: [] };
+    setTpl(p => ({ ...p, sections: [...p.sections, ns] }));
+  };
+  const delSec = (sid) => setTpl(p => ({ ...p, sections: p.sections.filter(s => s.id !== sid) }));
+  const upSec  = (sid, ch) => setTpl(p => ({ ...p, sections: p.sections.map(s => s.id===sid ? {...s,...ch} : s) }));
+  const addFld = (sid) => {
+    const nf = { id: uid(), label: 'Nuevo Campo', key: 'fld_'+uid(), type: 'text', placeholder: '', required: false };
+    setTpl(p => ({ ...p, sections: p.sections.map(s => s.id===sid ? {...s, fields:[...s.fields,nf]} : s) }));
+  };
+  const delFld = (sid, fid) => setTpl(p => ({ ...p, sections: p.sections.map(s => s.id===sid ? {...s, fields:s.fields.filter(f=>f.id!==fid)} : s) }));
+  const upFld  = (sid, fid, ch) => setTpl(p => ({ ...p, sections: p.sections.map(s => s.id===sid ? {...s, fields:s.fields.map(f=>f.id===fid?{...f,...ch}:f)} : s) }));
+
   const copy = async () => {
-    try { await navigator.clipboard.writeText(md); } catch { /* ignore */ }
+    try { await navigator.clipboard.writeText(md); } catch {}
     setCopied(true); setTimeout(() => setCopied(false), 2000);
   };
-
   const dl = () => {
-    const name = (typeof fd.projectName === 'string' ? fd.projectName : template.name).replace(/[^a-z0-9]/gi, '-').toLowerCase();
+    const name = (typeof fd.projectName === 'string' ? fd.projectName : tpl.name).replace(/[^a-z0-9]/gi, '-').toLowerCase();
     const a = document.createElement('a');
     a.href = 'data:text/markdown;charset=utf-8,' + encodeURIComponent(md);
-    a.download = name + '.md';
-    a.click();
+    a.download = name + '.md'; a.click();
   };
 
   const inp = { background: '#18181b', border: '1px solid #27272a', borderRadius: '6px', color: '#e4e4e7', padding: '8px 11px', fontSize: '0.8rem', fontFamily: "'Manrope',sans-serif", outline: 'none', width: '100%' };
+  const inpSm = { ...inp, padding: '5px 8px', fontSize: '0.75rem' };
 
   return (
     <div className="rma" style={{ height: '100vh', display: 'flex', flexDirection: 'column', background: '#09090b', color: '#e4e4e7', fontFamily: "'Manrope',sans-serif" }}>
       <style>{GLOBAL_CSS}</style>
 
+      {/* ── Header ── */}
       <div style={{ borderBottom: '1px solid #1e2024', padding: '11px 18px', display: 'flex', alignItems: 'center', gap: '10px', background: '#0d0d0f', flexShrink: 0, flexWrap: 'wrap', rowGap: '8px' }}>
         <button onClick={onBack} className="btn-ani" style={{ display: 'flex', alignItems: 'center', gap: '5px', background: 'none', border: 'none', color: '#71717a', cursor: 'pointer', fontSize: '0.8rem', fontFamily: "'Manrope',sans-serif", padding: '4px 6px', borderRadius: '5px' }}>
           <ArrowLeft size={14} /> Volver
         </button>
         <span style={{ color: '#27272a' }}>|</span>
-        <span style={{ fontSize: '1rem' }}>{template.emoji}</span>
-        <span style={{ fontFamily: "'Syne',sans-serif", fontWeight: 700, fontSize: '0.9rem', color: '#e4e4e7' }}>{template.name}</span>
+        <span style={{ fontSize: '1rem' }}>{tpl.emoji}</span>
+        <span style={{ fontFamily: "'Syne',sans-serif", fontWeight: 700, fontSize: '0.9rem', color: '#e4e4e7' }}>{tpl.name}</span>
+
+        {/* Toggle edición en vivo */}
+        <button
+          onClick={() => setEditMode(p => !p)}
+          style={{ display: 'flex', alignItems: 'center', gap: '5px', padding: '6px 12px', background: editMode ? '#18181b' : 'none', color: editMode ? tpl.color : '#52525b', border: `1px solid ${editMode ? tpl.color : '#27272a'}`, borderRadius: '6px', cursor: 'pointer', fontSize: '0.72rem', fontFamily: "'Syne',sans-serif", fontWeight: 700, transition: 'all 0.12s' }}
+        >
+          <Edit3 size={12} /> {editMode ? 'Editar ON' : 'Editar estructura'}
+        </button>
+
         <div style={{ marginLeft: 'auto', display: 'flex', gap: '3px', background: '#18181b', border: '1px solid #27272a', borderRadius: '7px', padding: '3px' }}>
-          {[['preview', '👁 Preview'], ['raw', '</> Markdown']].map(([v, l]) => (
-            <button key={v} onClick={() => setPanel(v)} style={{ padding: '5px 11px', background: panel === v ? '#27272a' : 'none', color: panel === v ? '#e4e4e7' : '#71717a', border: 'none', borderRadius: '5px', cursor: 'pointer', fontSize: '0.72rem', fontFamily: "'Syne',sans-serif", fontWeight: 600, transition: 'all 0.1s' }}>
+          {[['preview','👁 Preview'],['raw','</> Markdown']].map(([v,l]) => (
+            <button key={v} onClick={() => setPanel(v)} style={{ padding: '5px 11px', background: panel===v ? '#27272a' : 'none', color: panel===v ? '#e4e4e7' : '#71717a', border: 'none', borderRadius: '5px', cursor: 'pointer', fontSize: '0.72rem', fontFamily: "'Syne',sans-serif", fontWeight: 600, transition: 'all 0.1s' }}>
               {l}
             </button>
           ))}
         </div>
         <button className="btn-ani" onClick={copy} style={{ display: 'flex', alignItems: 'center', gap: '5px', padding: '7px 12px', background: '#18181b', color: copied ? '#10b981' : '#a1a1aa', border: `1px solid ${copied ? '#10b981' : '#27272a'}`, borderRadius: '7px', cursor: 'pointer', fontSize: '0.76rem', fontFamily: "'Manrope',sans-serif", transition: 'all 0.15s' }}>
-          {copied ? <><Check size={12} /> Copiado!</> : <><Copy size={12} /> Copiar</>}
+          {copied ? <><Check size={12}/> Copiado!</> : <><Copy size={12}/> Copiar</>}
         </button>
-        <button className="btn-ani" onClick={dl} style={{ display: 'flex', alignItems: 'center', gap: '5px', padding: '7px 12px', background: template.color, color: '#fff', border: 'none', borderRadius: '7px', cursor: 'pointer', fontSize: '0.76rem', fontFamily: "'Syne',sans-serif", fontWeight: 700 }}>
-          <Download size={12} /> Descargar .md
+        <button className="btn-ani" onClick={dl} style={{ display: 'flex', alignItems: 'center', gap: '5px', padding: '7px 12px', background: tpl.color, color: '#fff', border: 'none', borderRadius: '7px', cursor: 'pointer', fontSize: '0.76rem', fontFamily: "'Syne',sans-serif", fontWeight: 700 }}>
+          <Download size={12}/> Descargar .md
         </button>
       </div>
 
       <div style={{ flex: 1, overflow: 'hidden', display: 'flex' }}>
-        {/* Form */}
-        <div style={{ width: '400px', flexShrink: 0, borderRight: '1px solid #1e2024', overflowY: 'auto', padding: '20px' }}>
-          <div style={{ fontSize: '0.68rem', color: '#52525b', fontFamily: "'Syne',sans-serif", fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.07em', marginBottom: '18px' }}>
-            📋 Formulario
+
+        {/* ── Form panel ── */}
+        <div style={{ width: '420px', flexShrink: 0, borderRight: '1px solid #1e2024', overflowY: 'auto', padding: '20px' }}>
+          <div style={{ fontSize: '0.68rem', color: '#52525b', fontFamily: "'Syne',sans-serif", fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.07em', marginBottom: '16px', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+            <span>📋 Formulario</span>
+            {editMode && <span style={{ color: tpl.color, fontSize: '0.62rem' }}>✏ Modo edición activo</span>}
           </div>
-          {template.sections.map(sec => (
-            <div key={sec.id} style={{ marginBottom: '24px' }}>
+
+          {tpl.sections.map((sec, si) => (
+            <div key={sec.id} style={{ marginBottom: '22px' }}>
+
+              {/* Cabecera de sección */}
               <div style={{ display: 'flex', alignItems: 'center', gap: '7px', marginBottom: '10px' }}>
-                <div style={{ width: '2px', height: '14px', background: template.color, borderRadius: '1px', flexShrink: 0 }} />
-                <span style={{ fontSize: '0.76rem', fontFamily: "'Syne',sans-serif", fontWeight: 700, color: '#71717a', textTransform: 'uppercase', letterSpacing: '0.06em' }}>
-                  {sec.title}
-                </span>
-                {sec.required && <span style={{ fontSize: '0.65rem', color: '#ef4444' }}>*</span>}
+                <div style={{ width: '2px', height: '14px', background: tpl.color, borderRadius: '1px', flexShrink: 0 }} />
+                {editMode ? (
+                  <input
+                    value={sec.title}
+                    onChange={e => upSec(sec.id, { title: e.target.value })}
+                    style={{ ...inpSm, flex: 1, fontFamily: "'Syne',sans-serif", fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.06em', padding: '3px 7px' }}
+                  />
+                ) : (
+                  <span style={{ fontSize: '0.76rem', fontFamily: "'Syne',sans-serif", fontWeight: 700, color: '#71717a', textTransform: 'uppercase', letterSpacing: '0.06em', flex: 1 }}>
+                    {sec.title}
+                  </span>
+                )}
+                {sec.required && !editMode && <span style={{ fontSize: '0.65rem', color: '#ef4444' }}>*</span>}
+                {editMode && si > 0 && (
+                  <button onClick={() => delSec(sec.id)} title="Eliminar sección"
+                    style={{ background: 'none', border: 'none', color: '#3f3f46', cursor: 'pointer', padding: '2px', display: 'flex' }}
+                    onMouseEnter={e => e.currentTarget.style.color='#ef4444'}
+                    onMouseLeave={e => e.currentTarget.style.color='#3f3f46'}
+                  ><Trash2 size={12}/></button>
+                )}
               </div>
+
+              {/* Campos */}
               {sec.fields.map(fld => (
-                <div key={fld.id} style={{ marginBottom: '12px' }}>
+                <div key={fld.id} style={{ marginBottom: '12px', position: 'relative' }}>
                   <label style={{ display: 'flex', alignItems: 'center', gap: '5px', fontSize: '0.76rem', color: '#a1a1aa', marginBottom: '5px' }}>
-                    {fld.type === 'table' && <Table size={11} color="#52525b" />}
-                    {fld.type === 'image' && <Image size={11} color="#52525b" />}
-                    {fld.label}
-                    {fld.required && <span style={{ color: '#ef4444' }}>*</span>}
+                    {fld.type === 'table' && <Table size={11} color="#52525b"/>}
+                    {fld.type === 'image' && <Image size={11} color="#52525b"/>}
+                    {editMode ? (
+                      <input value={fld.label} onChange={e => upFld(sec.id, fld.id, {label:e.target.value})}
+                        style={{ ...inpSm, flex:1, padding:'2px 6px', color:'#e4e4e7' }} />
+                    ) : (
+                      <span>{fld.label}{fld.required && <span style={{color:'#ef4444',marginLeft:'3px'}}>*</span>}</span>
+                    )}
+                    {editMode && (
+                      <>
+                        <select value={fld.type} onChange={e => upFld(sec.id, fld.id, {type:e.target.value, ...(e.target.value==='table'?{columns:fld.columns||['Col 1','Col 2']}:{})})}
+                          style={{ ...inpSm, width:'auto', cursor:'pointer', marginLeft:'4px', padding:'2px 5px' }}>
+                          {FT.map(ft => <option key={ft.v} value={ft.v}>{ft.l}</option>)}
+                        </select>
+                        <button onClick={() => delFld(sec.id, fld.id)} title="Eliminar campo"
+                          style={{ background:'none', border:'none', color:'#3f3f46', cursor:'pointer', padding:'2px', display:'flex', flexShrink:0 }}
+                          onMouseEnter={e => e.currentTarget.style.color='#ef4444'}
+                          onMouseLeave={e => e.currentTarget.style.color='#3f3f46'}
+                        ><X size={11}/></button>
+                      </>
+                    )}
                   </label>
+
+                  {/* Input según tipo */}
                   {fld.type === 'image' ? (
-                    <ImageFieldEditor
-                      field={fld}
-                      value={fd[fld.key]}
-                      onChange={v => setVal(fld.key, v)}
-                    />
+                    <ImageFieldEditor field={fld} value={fd[fld.key]} onChange={v => setVal(fld.key, v)} />
                   ) : fld.type === 'table' ? (
-                    <TableFieldEditor
-                      field={fld}
-                      value={fd[fld.key]}
-                      onChange={v => setVal(fld.key, v)}
-                    />
+                    <TableFieldEditor field={fld} value={fd[fld.key]} onChange={v => setVal(fld.key, v)} />
                   ) : fld.type === 'textarea' || fld.type === 'list' ? (
                     <>
                       <textarea
                         value={fd[fld.key] || ''}
                         onChange={e => setVal(fld.key, e.target.value)}
                         placeholder={fld.placeholder}
-                        style={{ ...inp, minHeight: fld.type === 'list' ? '88px' : '70px', lineHeight: '1.55' }}
+                        style={{ ...inp, minHeight: fld.type==='list' ? '88px' : '70px', lineHeight:'1.55' }}
                       />
-                      {fld.type === 'list' && <div style={{ fontSize: '0.67rem', color: '#3f3f46', marginTop: '3px' }}>↵ Una entrada por línea</div>}
+                      {fld.type === 'list' && <div style={{ fontSize:'0.67rem', color:'#3f3f46', marginTop:'3px' }}>↵ Una entrada por línea</div>}
                     </>
                   ) : (
-                    <input type="text" value={fd[fld.key] || ''} onChange={e => setVal(fld.key, e.target.value)} placeholder={fld.placeholder} style={inp} />
+                    <input type="text" value={fd[fld.key]||''} onChange={e => setVal(fld.key, e.target.value)} placeholder={fld.placeholder} style={inp} />
                   )}
                 </div>
               ))}
+
+              {/* Botones de edición de sección */}
+              {editMode && (
+                <button onClick={() => addFld(sec.id)}
+                  style={{ display:'flex', alignItems:'center', gap:'5px', background:'none', border:`1px dashed ${tpl.color}44`, borderRadius:'6px', color: tpl.color+'99', cursor:'pointer', padding:'6px 12px', fontSize:'0.72rem', fontFamily:"'Manrope',sans-serif", width:'100%', justifyContent:'center', marginTop:'6px' }}
+                  onMouseEnter={e=>{e.currentTarget.style.borderColor=tpl.color;e.currentTarget.style.color=tpl.color;}}
+                  onMouseLeave={e=>{e.currentTarget.style.borderColor=tpl.color+'44';e.currentTarget.style.color=tpl.color+'99';}}
+                >
+                  <Plus size={12}/> Agregar campo
+                </button>
+              )}
             </div>
           ))}
+
+          {/* Botón agregar sección */}
+          {editMode && (
+            <button onClick={addSec}
+              style={{ display:'flex', alignItems:'center', gap:'7px', background:'none', border:`1px dashed #27272a`, borderRadius:'8px', color:'#52525b', cursor:'pointer', padding:'10px 16px', fontSize:'0.78rem', fontFamily:"'Syne',sans-serif", fontWeight:700, width:'100%', justifyContent:'center', marginTop:'4px' }}
+              onMouseEnter={e=>{e.currentTarget.style.borderColor=tpl.color;e.currentTarget.style.color=tpl.color;}}
+              onMouseLeave={e=>{e.currentTarget.style.borderColor='#27272a';e.currentTarget.style.color='#52525b';}}
+            >
+              <Plus size={13}/> Nueva Sección
+            </button>
+          )}
         </div>
 
-        {/* Preview */}
-        <div style={{ flex: 1, overflowY: 'auto', padding: '22px 28px' }}>
+        {/* ── Preview panel ── */}
+        <div style={{ flex:1, overflowY:'auto', padding:'22px 28px' }}>
           {panel === 'preview' ? (
             <>
-              <div style={{ fontSize: '0.68rem', color: '#52525b', fontFamily: "'Syne',sans-serif", fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.07em', marginBottom: '18px' }}>
+              <div style={{ fontSize:'0.68rem', color:'#52525b', fontFamily:"'Syne',sans-serif", fontWeight:700, textTransform:'uppercase', letterSpacing:'0.07em', marginBottom:'18px' }}>
                 👁 Vista previa renderizada
               </div>
               {md ? (
                 <div className="mdp" dangerouslySetInnerHTML={{ __html: html }} />
               ) : (
-                <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', height: '60%', color: '#3f3f46', textAlign: 'center', gap: '12px' }}>
-                  <div style={{ fontSize: '2.5rem' }}>✍️</div>
-                  <div style={{ fontFamily: "'Syne',sans-serif", fontWeight: 700, color: '#52525b' }}>Completa el formulario</div>
-                  <div style={{ fontSize: '0.8rem' }}>El preview se actualizará en tiempo real</div>
+                <div style={{ display:'flex', flexDirection:'column', alignItems:'center', justifyContent:'center', height:'60%', color:'#3f3f46', textAlign:'center', gap:'12px' }}>
+                  <div style={{ fontSize:'2.5rem' }}>✍️</div>
+                  <div style={{ fontFamily:"'Syne',sans-serif", fontWeight:700, color:'#52525b' }}>Completa el formulario</div>
+                  <div style={{ fontSize:'0.8rem' }}>El preview se actualizará en tiempo real</div>
                 </div>
               )}
             </>
           ) : (
             <>
-              <div style={{ fontSize: '0.68rem', color: '#52525b', fontFamily: "'Syne',sans-serif", fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.07em', marginBottom: '18px', display: 'flex', justifyContent: 'space-between' }}>
-                <span><FileCode size={12} style={{ display: 'inline', verticalAlign: 'middle', marginRight: '5px' }} />Markdown generado</span>
-                <span style={{ color: '#3f3f46', fontFamily: "'Manrope',sans-serif", fontWeight: 400, textTransform: 'none', letterSpacing: 0 }}>{md.split('\n').length} líneas</span>
+              <div style={{ fontSize:'0.68rem', color:'#52525b', fontFamily:"'Syne',sans-serif", fontWeight:700, textTransform:'uppercase', letterSpacing:'0.07em', marginBottom:'18px', display:'flex', justifyContent:'space-between' }}>
+                <span><FileCode size={12} style={{ display:'inline', verticalAlign:'middle', marginRight:'5px' }}/>Markdown generado</span>
+                <span style={{ color:'#3f3f46', fontFamily:"'Manrope',sans-serif", fontWeight:400, textTransform:'none', letterSpacing:0 }}>{md.split('\n').length} líneas</span>
               </div>
-              <pre style={{ fontFamily: "'JetBrains Mono',monospace", fontSize: '0.78rem', color: '#a1a1aa', lineHeight: 1.75, whiteSpace: 'pre-wrap', wordBreak: 'break-word', margin: 0 }}>
+              <pre style={{ fontFamily:"'JetBrains Mono',monospace", fontSize:'0.78rem', color:'#a1a1aa', lineHeight:1.75, whiteSpace:'pre-wrap', wordBreak:'break-word', margin:0 }}>
                 {md || '# Completa el formulario para ver el Markdown generado...'}
               </pre>
             </>
