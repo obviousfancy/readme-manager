@@ -14,7 +14,7 @@ const deepClone = o => JSON.parse(JSON.stringify(o));
 /* ─────────────── TEMPLATE MANIFEST ─────────────────────────── */
 // Para agregar un nuevo template: añade el archivo JSON a public/templates/
 // y agrega su nombre aquí.
-const TEMPLATE_FILES = ['hw.json', 'api.json', 'mobile.json', 'lib.json', 'uni.json','setup.json'];
+const TEMPLATE_FILES = ['hw.json', 'api.json', 'mobile.json', 'lib.json', 'uni.json'];
 
 /* ─────────────────── MARKDOWN RENDERER ─────────────────────── */
 function inl(t) {
@@ -1060,6 +1060,63 @@ function TemplateEditor({ template, onSave, onCancel }) {
   );
 }
 
+/* ── Sub-componente imagen para bloques ── */
+function ImageBlockInput({ blk, upd, inpSm }) {
+  const [dragging, setDragging] = useState(false);
+  const [localPreview, setLocalPreview] = useState(null);
+  const [suggestedPath, setSuggestedPath] = useState('');
+
+  const handleFile = (file) => {
+    if (!file || !file.type.startsWith('image/')) return;
+    const reader = new FileReader();
+    reader.onload = (e) => setLocalPreview(e.target.result);
+    reader.readAsDataURL(file);
+    const safeName = file.name.replace(/\s+/g, '-').toLowerCase();
+    const suggested = `./assets/${safeName}`;
+    setSuggestedPath(suggested);
+    if (!blk.url) upd(blk.id, { url: suggested, alt: blk.alt || file.name.replace(/\.[^.]+$/, '') });
+  };
+
+  const onDrop = (e) => { e.preventDefault(); setDragging(false); handleFile(e.dataTransfer.files[0]); };
+  const openPicker = () => {
+    const input = document.createElement('input');
+    input.type = 'file'; input.accept = 'image/*';
+    input.onchange = (e) => handleFile(e.target.files[0]);
+    input.click();
+  };
+
+  const previewSrc = localPreview || (blk.url?.startsWith('http') ? blk.url : null);
+
+  return (
+    <>
+      <div onDrop={onDrop} onDragOver={e=>{e.preventDefault();setDragging(true);}} onDragLeave={()=>setDragging(false)} onClick={openPicker}
+        style={{ border:`1px dashed ${dragging?'#3b82f6':'#27272a'}`, borderRadius:'7px', padding:'10px', textAlign:'center', cursor:'pointer', background: dragging?'#0d1f3c':'#0a0a0c', transition:'all 0.15s', minHeight:'60px', display:'flex', alignItems:'center', justifyContent:'center' }}>
+        {previewSrc
+          ? <img src={previewSrc} alt="preview" style={{maxHeight:'100px',maxWidth:'100%',borderRadius:'5px',objectFit:'contain'}}/>
+          : <span style={{color:'#3f3f46',fontSize:'0.72rem'}}>🖼 Arrastra imagen o <span style={{color:'#3b82f6'}}>click para seleccionar</span></span>
+        }
+      </div>
+      {suggestedPath && (
+        <div style={{background:'#0d1a0d',border:'1px solid #10b98133',borderRadius:'6px',padding:'6px 10px',fontSize:'0.68rem'}}>
+          <span style={{color:'#10b981',fontWeight:600}}>✓ Copia el archivo a: </span>
+          <code style={{color:'#a1a1aa',background:'#111',padding:'1px 5px',borderRadius:'3px'}}>{suggestedPath}</code>
+        </div>
+      )}
+      <input value={blk.url} onChange={e=>{upd(blk.id,{url:e.target.value});if(!e.target.value){setLocalPreview(null);setSuggestedPath('');}}}
+        placeholder="O escribe la URL (https://... o ./assets/foto.png)" style={{...inpSm,width:'100%'}} />
+      <div style={{display:'flex',gap:'7px'}}>
+        <input value={blk.alt} onChange={e=>upd(blk.id,{alt:e.target.value})} placeholder="Alt text" style={{...inpSm,flex:1}}/>
+        <input value={blk.caption} onChange={e=>upd(blk.id,{caption:e.target.value})} placeholder="Caption" style={{...inpSm,flex:1}}/>
+        <input value={blk.width} onChange={e=>upd(blk.id,{width:e.target.value})} placeholder="px" style={{...inpSm,width:'55px',flex:'none'}}/>
+      </div>
+      <label style={{display:'flex',alignItems:'center',gap:'6px',fontSize:'0.71rem',color:'#71717a',cursor:'pointer'}}>
+        <input type="checkbox" checked={blk.center} onChange={e=>upd(blk.id,{center:e.target.checked})} style={{accentColor:'#3b82f6'}}/>
+        Centrar <code style={{fontSize:'0.67rem',background:'#18181b',padding:'1px 4px',borderRadius:'3px',color:'#fb923c'}}>{'<div align="center">'}</code>
+      </label>
+    </>
+  );
+}
+
 /* ─────────────────── BLOCKS EDITOR ─────────────────────────── */
 const BLOCK_TYPES = [
   { type: 'text',        icon: <AlignLeft size={12}/>,      label: 'Texto',       color: '#a1a1aa' },
@@ -1155,24 +1212,8 @@ function BlocksEditor({ value, onChange }) {
                 )}
 
                 {blk.type === 'image' && (
-                  <>
-                    <input value={blk.url} onChange={e => upd(blk.id, { url: e.target.value })}
-                      placeholder="URL de imagen (https://... o ./assets/foto.png)" style={inp} />
-                    {blk.url && (
-                      <div style={{ background:'#0a0a0c', borderRadius:'6px', padding:'8px', textAlign: blk.center ? 'center':'left' }}>
-                        <img src={blk.url} alt={blk.alt||'preview'} style={{ maxWidth:'100%', maxHeight:'120px', borderRadius:'5px', objectFit:'contain' }}
-                          onError={e => e.target.style.display='none'} />
-                      </div>
-                    )}
-                    <div style={{ display:'flex', gap:'7px' }}>
-                      <input value={blk.alt} onChange={e => upd(blk.id,{alt:e.target.value})} placeholder="Alt text" style={{...inpSm,flex:1}} />
-                      <input value={blk.caption} onChange={e => upd(blk.id,{caption:e.target.value})} placeholder="Caption (opcional)" style={{...inpSm,flex:1}} />
-                      <input value={blk.width} onChange={e => upd(blk.id,{width:e.target.value})} placeholder="Ancho px" style={{...inpSm,width:'80px',flex:'none'}} />
-                    </div>
-                    <label style={{display:'flex',alignItems:'center',gap:'7px',fontSize:'0.73rem',color:'#71717a',cursor:'pointer'}}>
-                      <input type="checkbox" checked={blk.center} onChange={e => upd(blk.id,{center:e.target.checked})} style={{accentColor:'#3b82f6'}} />
-                      Centrar imagen <code style={{fontSize:'0.68rem',background:'#18181b',padding:'1px 5px',borderRadius:'3px',color:'#fb923c'}}>{'<div align="center">'}</code>
-                    </label>
+                  <ImageBlockInput blk={blk} upd={upd} inpSm={inpSm} />
+                )}
                   </>
                 )}
 
@@ -1254,43 +1295,94 @@ function BlocksEditor({ value, onChange }) {
 function ImageFieldEditor({ value, onChange }) {
   const img = value && typeof value === 'object' ? value : { url: '', alt: '', caption: '', center: true };
   const set = (k, v) => onChange({ ...img, [k]: v });
+  const [dragging, setDragging] = useState(false);
+  const [localPreview, setLocalPreview] = useState(null);
+  const [suggestedPath, setSuggestedPath] = useState('');
 
   const inp = { background: '#18181b', border: '1px solid #27272a', borderRadius: '6px', color: '#e4e4e7', padding: '8px 11px', fontSize: '0.8rem', fontFamily: "'Manrope',sans-serif", outline: 'none', width: '100%' };
 
+  const handleFile = (file) => {
+    if (!file || !file.type.startsWith('image/')) return;
+    // Preview local — solo para mostrar, no se sube a ningún lado
+    const reader = new FileReader();
+    reader.onload = (e) => setLocalPreview(e.target.result);
+    reader.readAsDataURL(file);
+    // Sugerir ruta relativa basada en el nombre del archivo
+    const safeName = file.name.replace(/\s+/g, '-').toLowerCase();
+    const suggested = `./assets/${safeName}`;
+    setSuggestedPath(suggested);
+    // No sobreescribir si el usuario ya puso una URL
+    if (!img.url) onChange({ ...img, url: suggested, alt: img.alt || file.name.replace(/\.[^.]+$/, '') });
+  };
+
+  const onDrop = (e) => {
+    e.preventDefault(); setDragging(false);
+    const file = e.dataTransfer.files[0];
+    handleFile(file);
+  };
+
+  const onDragOver = (e) => { e.preventDefault(); setDragging(true); };
+  const onDragLeave = () => setDragging(false);
+
+  const openPicker = () => {
+    const input = document.createElement('input');
+    input.type = 'file'; input.accept = 'image/*';
+    input.onchange = (e) => handleFile(e.target.files[0]);
+    input.click();
+  };
+
+  const displayUrl = img.url || '';
+  const previewSrc = localPreview || (displayUrl.startsWith('http') ? displayUrl : null);
+
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: '7px' }}>
-      <input
-        value={img.url}
-        onChange={e => set('url', e.target.value)}
-        placeholder="URL de la imagen (https://... o ruta relativa ./assets/foto.png)"
-        style={inp}
-      />
-      {img.url && (
-        <div style={{ background: '#0d0d0f', border: '1px solid #27272a', borderRadius: '7px', padding: '10px', textAlign: img.center ? 'center' : 'left' }}>
-          <img src={img.url} alt={img.alt || 'preview'} style={{ maxWidth: '100%', maxHeight: '140px', borderRadius: '6px', objectFit: 'contain' }} onError={e => e.target.style.display='none'} />
+
+      {/* Zona drag & drop */}
+      <div
+        onDrop={onDrop} onDragOver={onDragOver} onDragLeave={onDragLeave}
+        onClick={openPicker}
+        style={{ border: `1px dashed ${dragging ? '#3b82f6' : '#27272a'}`, borderRadius: '8px', padding: '14px', textAlign: 'center', cursor: 'pointer', background: dragging ? '#0d1f3c' : '#0d0d0f', transition: 'all 0.15s' }}
+      >
+        {previewSrc ? (
+          <img src={previewSrc} alt="preview" style={{ maxHeight: '120px', maxWidth: '100%', borderRadius: '6px', objectFit: 'contain' }} />
+        ) : (
+          <div style={{ color: '#3f3f46', fontSize: '0.75rem', fontFamily: "'Manrope',sans-serif" }}>
+            <div style={{ fontSize: '1.5rem', marginBottom: '5px' }}>🖼</div>
+            <div>Arrastra una imagen aquí o <span style={{ color: '#3b82f6' }}>haz click para seleccionar</span></div>
+            <div style={{ fontSize: '0.66rem', marginTop: '4px', color: '#27272a' }}>Solo para preview — debes copiar el archivo a tu repo manualmente</div>
+          </div>
+        )}
+      </div>
+
+      {/* Ruta sugerida */}
+      {suggestedPath && (
+        <div style={{ background: '#0d1a0d', border: '1px solid #10b98133', borderRadius: '7px', padding: '8px 12px', fontSize: '0.72rem', fontFamily: "'Manrope',sans-serif" }}>
+          <div style={{ color: '#10b981', fontWeight: 600, marginBottom: '3px', display: 'flex', alignItems: 'center', gap: '5px' }}>
+            ✓ Ruta sugerida para tu repo:
+          </div>
+          <code style={{ color: '#a1a1aa', fontSize: '0.74rem', background: '#111', padding: '2px 7px', borderRadius: '4px', display: 'block' }}>
+            {suggestedPath}
+          </code>
+          <div style={{ color: '#3f3f46', marginTop: '5px', fontSize: '0.67rem' }}>
+            Copia tu imagen a <code style={{ background: '#111', padding: '1px 4px', borderRadius: '3px' }}>assets/</code> en la raíz de tu repositorio con ese nombre
+          </div>
         </div>
       )}
+
+      {/* URL manual */}
+      <input
+        value={displayUrl}
+        onChange={e => { onChange({ ...img, url: e.target.value }); if (!e.target.value) { setLocalPreview(null); setSuggestedPath(''); } }}
+        placeholder="O escribe la URL directamente (https://... o ./assets/foto.png)"
+        style={inp}
+      />
+
       <div style={{ display: 'flex', gap: '7px' }}>
-        <input
-          value={img.alt}
-          onChange={e => set('alt', e.target.value)}
-          placeholder="Texto alternativo (alt)"
-          style={{ ...inp, flex: 1 }}
-        />
-        <input
-          value={img.caption}
-          onChange={e => set('caption', e.target.value)}
-          placeholder="Caption (opcional)"
-          style={{ ...inp, flex: 1 }}
-        />
+        <input value={img.alt} onChange={e => set('alt', e.target.value)} placeholder="Texto alternativo (alt)" style={{ ...inp, flex: 1 }} />
+        <input value={img.caption} onChange={e => set('caption', e.target.value)} placeholder="Caption (opcional)" style={{ ...inp, flex: 1 }} />
       </div>
       <label style={{ display: 'flex', alignItems: 'center', gap: '7px', fontSize: '0.75rem', color: '#71717a', cursor: 'pointer', userSelect: 'none' }}>
-        <input
-          type="checkbox"
-          checked={img.center}
-          onChange={e => set('center', e.target.checked)}
-          style={{ accentColor: '#06b6d4', width: '14px', height: '14px' }}
-        />
+        <input type="checkbox" checked={img.center} onChange={e => set('center', e.target.checked)} style={{ accentColor: '#06b6d4', width: '14px', height: '14px' }} />
         Centrar imagen con HTML (<code style={{ fontSize: '0.7rem', background: '#18181b', padding: '1px 5px', borderRadius: '3px', color: '#fb923c' }}>{'<div align="center">'}</code>)
       </label>
     </div>
