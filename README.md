@@ -35,6 +35,7 @@ Desarrollado como herramienta de productividad personal para proyectos de embedd
 
 ## 📁 Estructura del Repositorio
 
+```
 readme-manager/
 ├── public/
 │   └── templates/          ← Templates JSON del repositorio (defaults)
@@ -51,7 +52,7 @@ readme-manager/
 │       └── ci.yml          ← Lint + deploy automático a GitHub Pages
 ├── vite.config.js
 └── package.json
-
+```
 ## ⚙️ Instalación y Uso Local
 
 ```bash
@@ -64,23 +65,20 @@ npm install
 
 # 3. Levantar servidor de desarrollo
 npm run dev
-
+```
 Abre http://localhost:5173 en tu navegador.
 
-📦 Agregar un Template al Repositorio
+## 📦 Agregar un Template al Repositorio
 Los templates que viven en public/templates/ están disponibles para todos los usuarios que clonen el repo.
 
-Pasos:
+**Pasos:**
 
-1. Crea tu archivo JSON con la estructura del template (ver ejemplos en public/templates/)
+1. Crea tu archivo JSON con la estructura del template (ver ejemplos en `public/templates/`)
+2. Cópialo a `public/templates/tu-template.json`
+3. Agrega el nombre del archivo al array `TEMPLATE_FILES` en `src/App.jsx`:
 
-2. Cópialo a public/templates/tu-template.json
-
-3.  Agrega el nombre del archivo al array TEMPLATE_FILES en src/App.jsx:
-
-```
+```js
 const TEMPLATE_FILES = ['hw.json', 'api.json', ..., 'tu-template.json'];
-
 ```
 
 4. Haz commit y push — el CI desplegará automáticamente.
@@ -90,8 +88,6 @@ También puedes importar un template JSON desde el botón "Importar JSON" en el 
 
 ---
 
-### Bloque 3: Tipos de Campos, Flujo de Trabajo, Deploy y Licencia
-```markdown
 ## 🧩 Tipos de Campo Disponibles
 
 | Tipo | Descripción | Genera en Markdown |
@@ -139,4 +135,4 @@ Este proyecto está licenciado bajo la **Licencia Creative Commons Atribución-N
 
 ---
 
-Desarrollado por [Jonathan Mejorado](https://github.com/obviousfancy) · IPN México
+Desarrollado por [obviousfancy](https://github.com/obviousfancy) 
