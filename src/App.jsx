@@ -14,7 +14,7 @@ const deepClone = o => JSON.parse(JSON.stringify(o));
 /* ─────────────── TEMPLATE MANIFEST ─────────────────────────── */
 // Para agregar un nuevo template: añade el archivo JSON a public/templates/
 // y agrega su nombre aquí.
-const TEMPLATE_FILES = ['hw.json', 'api.json', 'mobile.json', 'lib.json', 'uni.json','setup.json'];
+const TEMPLATE_FILES = ['hw.json', 'api.json', 'mobile.json', 'lib.json', 'uni.json'];
 
 /* ─────────────────── MARKDOWN RENDERER ─────────────────────── */
 function inl(t) {
@@ -742,6 +742,13 @@ function TemplateEditor({ template, onSave, onCancel }) {
   const upT = ch => setT(p => ({ ...p, ...ch }));
   const upSec = (sid, ch) => setT(p => ({ ...p, sections: p.sections.map(s => s.id === sid ? { ...s, ...ch } : s) }));
   const delSec = sid => setT(p => ({ ...p, sections: p.sections.filter(s => s.id !== sid) }));
+  const moveSec = (sid, dir) => setT(p => {
+    const secs = [...p.sections];
+    const i = secs.findIndex(s => s.id === sid);
+    if ((dir === -1 && i === 0) || (dir === 1 && i === secs.length - 1)) return p;
+    [secs[i], secs[i + dir]] = [secs[i + dir], secs[i]];
+    return { ...p, sections: secs };
+  });
   const addSec = () => {
     const ns = { id: uid(), title: 'Nueva Sección', required: false, fields: [] };
     setT(p => ({ ...p, sections: [...p.sections, ns] }));
@@ -825,6 +832,11 @@ function TemplateEditor({ template, onSave, onCancel }) {
         {t.sections.map((sec, si) => (
           <div key={sec.id} style={{ background: '#111113', border: '1px solid #1e2024', borderRadius: '11px', marginBottom: '12px', overflow: 'hidden' }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: '10px', padding: '12px 16px', borderBottom: open.has(sec.id) ? '1px solid #1e2024' : 'none', cursor: 'pointer' }} onClick={() => setOpen(p => { const n = new Set(p); n.has(sec.id) ? n.delete(sec.id) : n.add(sec.id); return n; })}>
+              {/* Botones reordenar */}
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '1px', flexShrink: 0 }} onClick={e => e.stopPropagation()}>
+                <button className="blk-move" onClick={() => moveSec(sec.id, -1)} disabled={si===0} style={{ opacity: si===0 ? 0.25 : 1 }} title="Subir sección"><MoveUp size={11}/></button>
+                <button className="blk-move" onClick={() => moveSec(sec.id, 1)}  disabled={si===t.sections.length-1} style={{ opacity: si===t.sections.length-1 ? 0.25 : 1 }} title="Bajar sección"><MoveDown size={11}/></button>
+              </div>
               <div style={{ width: '2px', height: '14px', background: t.color, borderRadius: '1px', flexShrink: 0 }} />
               <input
                 value={sec.title}
@@ -1385,6 +1397,13 @@ function Generator({ template, onBack }) {
   };
   const delSec = (sid) => setTpl(p => ({ ...p, sections: p.sections.filter(s => s.id !== sid) }));
   const upSec  = (sid, ch) => setTpl(p => ({ ...p, sections: p.sections.map(s => s.id===sid ? {...s,...ch} : s) }));
+  const moveSec = (sid, dir) => setTpl(p => {
+    const secs = [...p.sections];
+    const i = secs.findIndex(s => s.id === sid);
+    if ((dir === -1 && i === 0) || (dir === 1 && i === secs.length - 1)) return p;
+    [secs[i], secs[i + dir]] = [secs[i + dir], secs[i]];
+    return { ...p, sections: secs };
+  });
   const addFld = (sid) => {
     const nf = { id: uid(), label: 'Nuevo Campo', key: 'fld_'+uid(), type: 'text', placeholder: '', required: false };
     setTpl(p => ({ ...p, sections: p.sections.map(s => s.id===sid ? {...s, fields:[...s.fields,nf]} : s) }));
@@ -1456,6 +1475,12 @@ function Generator({ template, onBack }) {
 
               {/* Cabecera de sección */}
               <div style={{ display: 'flex', alignItems: 'center', gap: '7px', marginBottom: '10px' }}>
+                {editMode && (
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '1px', flexShrink: 0 }}>
+                    <button className="blk-move" onClick={() => moveSec(sec.id, -1)} disabled={si===0} style={{ opacity: si===0 ? 0.25 : 1 }} title="Subir sección"><MoveUp size={11}/></button>
+                    <button className="blk-move" onClick={() => moveSec(sec.id, 1)}  disabled={si===tpl.sections.length-1} style={{ opacity: si===tpl.sections.length-1 ? 0.25 : 1 }} title="Bajar sección"><MoveDown size={11}/></button>
+                  </div>
+                )}
                 <div style={{ width: '2px', height: '14px', background: tpl.color, borderRadius: '1px', flexShrink: 0 }} />
                 {editMode ? (
                   <input
