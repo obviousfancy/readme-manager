@@ -1,7 +1,7 @@
 # README Manager
 
 ![Status](https://img.shields.io/badge/Status-Active-success)
-![License](https://img.shields.io/badge/License-MIT-blue)
+![License](https://img.shields.io/badge/License-CC%20BY--NC%204.0-orange)
 ![React](https://img.shields.io/badge/React-18-61dafb)
 ![Vite](https://img.shields.io/badge/Vite-6-646cff)
 
@@ -34,97 +34,3 @@ Desarrollado como herramienta de productividad personal para proyectos de embedd
 - **Persistencia:** localStorage del navegador
 
 ## 📁 Estructura del Repositorio
-
-```
-readme-manager/
-├── public/
-│   └── templates/          ← Templates JSON del repositorio (defaults)
-│       ├── hw.json         ← Hardware / Embebido
-│       ├── api.json        ← REST API / Backend
-│       ├── mobile.json     ← App Móvil
-│       ├── lib.json        ← Librería Open Source
-│       ├── uni.json        ← Proyecto Universitario
-│       └── lesson.json     ← Lección técnica / Documentación de producto
-├── src/
-│   └── App.jsx             ← Aplicación completa (componente único)
-├── .github/
-│   └── workflows/
-│       └── ci.yml          ← Lint + deploy automático a GitHub Pages
-├── vite.config.js
-└── package.json
-```
-
-## ⚙️ Instalación y Uso Local
-
-```bash
-# 1. Clonar el repositorio
-git clone git@github.com:obviousfancy/readme-manager.git
-cd readme-manager
-
-# 2. Instalar dependencias
-npm install
-
-# 3. Levantar servidor de desarrollo
-npm run dev
-```
-
-Abre `http://localhost:5173` en tu navegador.
-
-## 📦 Agregar un Template al Repositorio
-
-Los templates que viven en `public/templates/` están disponibles para todos los usuarios que clonen el repo.
-
-**Pasos:**
-
-1. Crea tu archivo JSON con la estructura del template (ver ejemplos en `public/templates/`)
-2. Cópialo a `public/templates/tu-template.json`
-3. Agrega el nombre del archivo al array `TEMPLATE_FILES` en `src/App.jsx`:
-
-```js
-const TEMPLATE_FILES = ['hw.json', 'api.json', ..., 'tu-template.json'];
-```
-
-4. Haz commit y push — el CI desplegará automáticamente.
-
-> [!TIP]
-> También puedes importar un template JSON desde el botón **"Importar JSON"** en el dashboard sin tocar el código. Quedará guardado en tu localStorage local.
-
-## 🧩 Tipos de Campo Disponibles
-
-| Tipo | Descripción | Genera en Markdown |
-| :--- | :--- | :--- |
-| `text` | Texto corto de una línea | `**Label:** valor` |
-| `textarea` | Texto largo multilinea | Párrafo o bloque de código |
-| `list` | Lista con sub-tipos: puntos, numerada, tareas | `- item` / `1. item` / `- [ ] item` |
-| `table` | Tabla editable con columnas y filas configurables | Tabla GFM |
-| `image` | Imagen con drag & drop, alt, caption y centrado | `![alt](url)` o `<div align="center">` |
-| `code` | Bloque de código con selector de lenguaje | ` ```cpp ` |
-| `alert` | Alerta GFM: NOTE, TIP, WARNING, IMPORTANT, CAUTION | `> [!NOTE]` |
-| `collapsible` | Toggle colapsible con summary y contenido | `<details><summary>` |
-| `badges` | Shields.io badges con preview en vivo | `![badge](shields.io/...)` |
-| `video` | Link a video con thumbnail clickeable | Imagen clickeable o link 🎬 |
-| `blocks` | Editor de rich content — combina todos los tipos en orden libre | Todos los anteriores |
-
-## 🔩 Guía de Trabajo Rápida
-
-| Tipo de Commit | Descripción |
-| :--- | :--- |
-| **feat** | Nueva funcionalidad o campo |
-| **template** | Nuevo template JSON o modificación de existente |
-| **fix** | Corrección de errores |
-| **docs** | Cambios en el README o documentación |
-| **style** | Cambios visuales sin afectar funcionalidad |
-
-## 🌐 Deploy
-
-El proyecto usa GitHub Actions para deploy automático. Cada push a `main` ejecuta:
-
-1. **Lint** — verifica el código con ESLint
-2. **Build** — genera los archivos estáticos con Vite
-3. **Deploy** — publica en la rama `gh-pages`
-
-La app queda disponible en `https://obviousfancy.github.io/readme-manager/`
-
----
-
-Desarrollado por [Jonathan Mejorado](https://github.com/obviousfancy) · IPN México
