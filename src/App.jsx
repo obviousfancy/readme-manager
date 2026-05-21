@@ -363,7 +363,7 @@ function loadLS() {
   catch { return {}; }
 }
 function saveLS(data) {
-  try { localStorage.setItem(LS_KEY, JSON.stringify(data)); } catch { }
+  try { localStorage.setItem(LS_KEY, JSON.stringify(data)); } catch (_e) { /* storage unavailable */ }
 }
 
 /* ─────────────────── GLOBAL STYLES ─────────────────────────── */
@@ -1239,7 +1239,7 @@ function BlocksEditor({ value, onChange }) {
 }
 
 /* ─────────────────── IMAGE FIELD EDITOR (Generator) ─────────── */
-function ImageFieldEditor({ field, value, onChange }) {
+function ImageFieldEditor({ value, onChange }) {
   const img = value && typeof value === 'object' ? value : { url: '', alt: '', caption: '', center: true };
   const set = (k, v) => onChange({ ...img, [k]: v });
 
@@ -1393,7 +1393,7 @@ function Generator({ template, onBack }) {
   const upFld  = (sid, fid, ch) => setTpl(p => ({ ...p, sections: p.sections.map(s => s.id===sid ? {...s, fields:s.fields.map(f=>f.id===fid?{...f,...ch}:f)} : s) }));
 
   const copy = async () => {
-    try { await navigator.clipboard.writeText(md); } catch {}
+    try { await navigator.clipboard.writeText(md); } catch (_e) { /* clipboard unavailable */ }
     setCopied(true); setTimeout(() => setCopied(false), 2000);
   };
   const dl = () => {
