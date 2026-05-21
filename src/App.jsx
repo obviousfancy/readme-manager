@@ -363,7 +363,7 @@ function loadLS() {
   catch { return {}; }
 }
 function saveLS(data) {
-  try { localStorage.setItem(LS_KEY, JSON.stringify(data)); } catch (_e) { /* storage unavailable */ }
+  try { localStorage.setItem(LS_KEY, JSON.stringify(data)); } catch (_) { /* storage unavailable */ }
 }
 
 /* ─────────────────── GLOBAL STYLES ─────────────────────────── */
@@ -1393,7 +1393,7 @@ function Generator({ template, onBack }) {
   const upFld  = (sid, fid, ch) => setTpl(p => ({ ...p, sections: p.sections.map(s => s.id===sid ? {...s, fields:s.fields.map(f=>f.id===fid?{...f,...ch}:f)} : s) }));
 
   const copy = async () => {
-    try { await navigator.clipboard.writeText(md); } catch (_e) { /* clipboard unavailable */ }
+    try { await navigator.clipboard.writeText(md); } catch (_) { /* clipboard unavailable */ }
     setCopied(true); setTimeout(() => setCopied(false), 2000);
   };
   const dl = () => {
