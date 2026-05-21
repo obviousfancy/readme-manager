@@ -1,0 +1,102 @@
+{
+  "id": "setup",
+  "name": "Instalación y Configuración",
+  "emoji": "🔩",
+  "color": "#06b6d4",
+  "isDefault": false,
+  "sections": [
+    {
+      "id": "header",
+      "title": "Encabezado",
+      "required": true,
+      "fields": [
+        { "id": "set_f1", "label": "Nombre del proyecto", "key": "projectName", "type": "text", "placeholder": "Ej: Entorno de desarrollo STM32 + Linux", "required": true },
+        { "id": "set_f2", "label": "Descripción breve", "key": "description", "type": "textarea", "placeholder": "Guía completa para configurar el entorno de desarrollo STM32 en Ubuntu 24.04, incluyendo toolchain, IDE y herramientas de depuración.", "required": true }
+      ]
+    },
+    {
+      "id": "requirements",
+      "title": "Requisitos del Sistema",
+      "required": true,
+      "fields": [
+        {
+          "id": "set_f3",
+          "label": "Tabla de requisitos",
+          "key": "requirementsTable",
+          "type": "table",
+          "columns": ["Componente", "Versión mínima", "Versión recomendada", "Notas"]
+        },
+        { "id": "set_f4", "label": "Notas de compatibilidad", "key": "compatibility", "type": "alert", "alertLevel": "WARNING", "placeholder": "Esta guía fue probada en Ubuntu 24.04 y Arch Linux. En Windows puede requerir pasos adicionales." }
+      ]
+    },
+    {
+      "id": "dependencies",
+      "title": "Dependencias Previas",
+      "required": false,
+      "fields": [
+        { "id": "set_f5", "label": "Paquetes / dependencias (una por línea)", "key": "deps", "type": "list", "listStyle": "bullet", "placeholder": "git: control de versiones\ncurl: descarga de scripts\nbuild-essential: compiladores base" },
+        { "id": "set_f6", "label": "Comando de instalación de dependencias", "key": "depsCmd", "type": "code", "lang": "bash", "placeholder": "sudo apt update && sudo apt install -y git curl build-essential" }
+      ]
+    },
+    {
+      "id": "installation",
+      "title": "Instalación Paso a Paso",
+      "required": true,
+      "fields": [
+        { "id": "set_f7", "label": "Pasos de instalación con recursos", "key": "installSteps", "type": "blocks" }
+      ]
+    },
+    {
+      "id": "ide_config",
+      "title": "Configuración del IDE / Editor",
+      "required": false,
+      "fields": [
+        { "id": "set_f8", "label": "IDE o editor", "key": "ideName", "type": "text", "placeholder": "Ej: STM32CubeIDE / VS Code / CLion" },
+        { "id": "set_f9", "label": "Plugins / extensiones recomendadas (una por línea)", "key": "plugins", "type": "list", "listStyle": "bullet", "placeholder": "Cortex-Debug: depuración de ARM\nC/C++ Extension Pack: autocompletado\nGitLens: historial de git" },
+        { "id": "set_f10", "label": "Configuración del IDE con capturas", "key": "ideSetup", "type": "blocks" }
+      ]
+    },
+    {
+      "id": "env_vars",
+      "title": "Variables de Entorno",
+      "required": false,
+      "fields": [
+        { "id": "set_f11", "label": "Variables de entorno (una por línea)", "key": "envVars", "type": "list", "listStyle": "bullet", "placeholder": "ARM_TOOLCHAIN_PATH=/opt/arm-none-eabi\nOPENOCD_PATH=/usr/local/share/openocd" },
+        { "id": "set_f12", "label": "Dónde agregarlas", "key": "envNote", "type": "alert", "alertLevel": "TIP", "placeholder": "Agrega estas variables al final de tu ~/.bashrc o ~/.zshrc y ejecuta source ~/.bashrc para aplicarlas." }
+      ]
+    },
+    {
+      "id": "verification",
+      "title": "Verificación de la Instalación",
+      "required": false,
+      "fields": [
+        { "id": "set_f13", "label": "Comandos para verificar", "key": "verifyCmd", "type": "code", "lang": "bash", "placeholder": "arm-none-eabi-gcc --version\nopenocd --version\nst-info --probe" },
+        { "id": "set_f14", "label": "Salida esperada", "key": "expectedOutput", "type": "code", "lang": "plaintext", "placeholder": "arm-none-eabi-gcc (GNU Arm Embedded Toolchain) 13.2.1\nopenocd 0.12.0\nFound 1 ST-LINK/V2 device" },
+        { "id": "set_f15", "label": "Nota de verificación", "key": "verifyNote", "type": "alert", "alertLevel": "NOTE", "placeholder": "Si algún comando no es reconocido, verifica que la ruta del binario esté en tu PATH." }
+      ]
+    },
+    {
+      "id": "troubleshooting",
+      "title": "Solución de Problemas",
+      "required": false,
+      "fields": [
+        {
+          "id": "set_f16",
+          "label": "Tabla de errores comunes",
+          "key": "errorsTable",
+          "type": "table",
+          "columns": ["Error", "Causa probable", "Solución"]
+        },
+        { "id": "set_f17", "label": "Recursos adicionales (una por línea)", "key": "resources", "type": "list", "listStyle": "bullet", "placeholder": "Documentación oficial: https://...\nForo de soporte: https://..." }
+      ]
+    },
+    {
+      "id": "workflow",
+      "title": "Flujo de Trabajo Recomendado",
+      "required": false,
+      "fields": [
+        { "id": "set_f18", "label": "Flujo de trabajo con ejemplos y capturas", "key": "workflowBlocks", "type": "blocks" }
+      ]
+    }
+  ]
+}

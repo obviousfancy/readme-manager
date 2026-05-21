@@ -14,7 +14,7 @@ const deepClone = o => JSON.parse(JSON.stringify(o));
 /* ─────────────── TEMPLATE MANIFEST ─────────────────────────── */
 // Para agregar un nuevo template: añade el archivo JSON a public/templates/
 // y agrega su nombre aquí.
-const TEMPLATE_FILES = ['hw.json', 'api.json', 'mobile.json', 'lib.json', 'uni.json'];
+const TEMPLATE_FILES = ['hw.json', 'api.json', 'mobile.json', 'lib.json', 'uni.json','setup.json'];
 
 /* ─────────────────── MARKDOWN RENDERER ─────────────────────── */
 function inl(t) {
