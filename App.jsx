@@ -89,7 +89,12 @@ function buildMd(tpl, data) {
         const rows = Array.isArray(d) ? d : (d.rows || []);
         return rows.some(r => r.some(c => c.trim()));
       }
-      if (fld.type === 'image') return !!(data[fld.key]?.url);
+      if (fld.type === 'image')       return !!(data[fld.key]?.url);
+      if (fld.type === 'collapsible') return !!(data[fld.key+'_summary'] || data[fld.key]);
+      if (fld.type === 'alert')       return !!(data[fld.key]);
+      if (fld.type === 'video')       return !!(data[fld.key]);
+      if (fld.type === 'code')        return !!(data[fld.key]);
+      if (fld.type === 'badges')      return !!(data[fld.key]);
       if (fld.type === 'blocks') {
         const blocks = data[fld.key];
         return Array.isArray(blocks) && blocks.some(b => b && (b.content?.trim() || b.url?.trim() || b.type === 'divider'));
@@ -189,6 +194,71 @@ function buildMd(tpl, data) {
               default: break;
             }
           }
+          continue;
+        }
+
+        // Code field type
+        if (fld.type === 'code') {
+          const val = g(fld.key);
+          if (!val) continue;
+          if (acc.length) { lines.push(...acc, ''); acc = []; }
+          lines.push('```' + (fld.lang || ''), val, '```', '');
+          continue;
+        }
+
+        // Alert field type
+        if (fld.type === 'alert') {
+          const val = g(fld.key + '_content') || g(fld.key);
+          const level = (data[fld.key + '_level'] || fld.alertLevel || 'NOTE').toUpperCase();
+          if (!val) continue;
+          if (acc.length) { lines.push(...acc, ''); acc = []; }
+          lines.push(`> [!${level}]`);
+          val.trim().split('\n').forEach(l => lines.push(`> ${l}`));
+          lines.push('');
+          continue;
+        }
+
+        // Collapsible field type
+        if (fld.type === 'collapsible') {
+          const summary = g(fld.key + '_summary');
+          const content = g(fld.key + '_content') || g(fld.key);
+          if (!summary && !content) continue;
+          if (acc.length) { lines.push(...acc, ''); acc = []; }
+          lines.push('<details>');
+          lines.push(`<summary>${summary || 'Ver más'}</summary>`, '');
+          if (content) lines.push(content.trim());
+          lines.push('', '</details>', '');
+          continue;
+        }
+
+        // Badges field type
+        if (fld.type === 'badges') {
+          const raw = g(fld.key);
+          if (!raw) continue;
+          if (acc.length) { lines.push(...acc, ''); acc = []; }
+          const badges = raw.split('\n').filter(x => x.trim()).map(b => {
+            // format: "Label:value:color" or just URL
+            if (b.startsWith('http') || b.startsWith('![')) return b.trim();
+            const parts = b.split(':');
+            const label = encodeURIComponent(parts[0] || 'badge');
+            const val2  = encodeURIComponent(parts[1] || '');
+            const color = (parts[2] || 'blue').trim();
+            return `![${parts[0]}](https://img.shields.io/badge/${label}-${val2}-${color})`;
+          });
+          lines.push(badges.join(' '), '');
+          continue;
+        }
+
+        // Video field type
+        if (fld.type === 'video') {
+          const url   = g(fld.key + '_url') || g(fld.key);
+          const thumb = g(fld.key + '_thumb');
+          const label = g(fld.key + '_label') || 'Ver video';
+          if (!url) continue;
+          if (acc.length) { lines.push(...acc, ''); acc = []; }
+          if (thumb) lines.push(`[![${label}](${thumb})](${url})`);
+          else       lines.push(`🎬 [${label}](${url})`);
+          lines.push('');
           continue;
         }
 
@@ -652,12 +722,17 @@ function MenuItem({ icon, label, onClick, danger }) {
 const EMOJIS = ['⚙️','🌐','📱','📦','🎓','🔧','🤖','📡','💻','🔬','📊','🎮','🚀','💡','🛠️','📝','🔷','⭐','🔌','📲'];
 const COLORS = ['#f97316','#3b82f6','#10b981','#8b5cf6','#f59e0b','#ec4899','#06b6d4','#ef4444','#84cc16','#6366f1'];
 const FT = [
-  { v: 'text',     l: 'Texto corto' },
-  { v: 'textarea', l: 'Texto largo' },
-  { v: 'list',     l: 'Lista (una por línea)' },
-  { v: 'table',    l: 'Tabla con columnas' },
-  { v: 'image',    l: 'Imagen (URL)' },
-  { v: 'blocks',   l: 'Bloques rich content ✦' },
+  { v: 'text',        l: 'Texto corto' },
+  { v: 'textarea',    l: 'Texto largo' },
+  { v: 'list',        l: 'Lista (una por línea)' },
+  { v: 'table',       l: 'Tabla con columnas' },
+  { v: 'image',       l: 'Imagen (URL)' },
+  { v: 'code',        l: 'Bloque de código' },
+  { v: 'alert',       l: 'Alerta / Nota (GFM)' },
+  { v: 'collapsible', l: 'Toggle colapsible' },
+  { v: 'badges',      l: 'Badges / Shields' },
+  { v: 'video',       l: 'Video (link clickeable)' },
+  { v: 'blocks',      l: 'Bloques rich content ✦' },
 ];
 
 function TemplateEditor({ template, onSave, onCancel }) {
@@ -847,15 +922,74 @@ function TemplateEditor({ template, onSave, onCancel }) {
 
                     {fld.type === 'image' && (
                       <div style={{ display: 'flex', flexDirection: 'column', gap: '6px', marginBottom: '6px' }}>
-                        <input
-                          value={fld.placeholder || ''}
-                          onChange={e => upFld(sec.id, fld.id, { placeholder: e.target.value })}
-                          placeholder="URL de ejemplo (https://... o ./assets/foto.png)"
-                          style={inp}
-                        />
-                        <div style={{ fontSize: '0.66rem', color: '#3f3f46' }}>
-                          🖼 Al generar el README, el usuario podrá poner URL, alt text, caption y elegir si centrar
+                        <input value={fld.placeholder || ''} onChange={e => upFld(sec.id, fld.id, { placeholder: e.target.value })} placeholder="URL de ejemplo (https://... o ./assets/foto.png)" style={inp} />
+                        <div style={{ fontSize: '0.66rem', color: '#3f3f46' }}>🖼 Al generar, el usuario podrá poner URL, alt text, caption y elegir si centrar</div>
+                      </div>
+                    )}
+
+                    {fld.type === 'code' && (
+                      <div style={{ display: 'flex', flexDirection: 'column', gap: '6px', marginBottom: '6px' }}>
+                        <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
+                          <label style={{ fontSize: '0.72rem', color: '#71717a', flexShrink: 0 }}>Lenguaje por defecto:</label>
+                          <select value={fld.lang || 'cpp'} onChange={e => upFld(sec.id, fld.id, { lang: e.target.value })} className="lang-sel" style={{ flex: 1 }}>
+                            {CODE_LANGS.map(l => <option key={l} value={l}>{l}</option>)}
+                          </select>
                         </div>
+                        <div style={{ fontSize: '0.66rem', color: '#3f3f46' }}>💡 El usuario puede cambiar el lenguaje al generar</div>
+                      </div>
+                    )}
+
+                    {fld.type === 'alert' && (
+                      <div style={{ display: 'flex', flexDirection: 'column', gap: '6px', marginBottom: '6px' }}>
+                        <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
+                          <label style={{ fontSize: '0.72rem', color: '#71717a', flexShrink: 0 }}>Nivel por defecto:</label>
+                          <select value={fld.alertLevel || 'NOTE'} onChange={e => upFld(sec.id, fld.id, { alertLevel: e.target.value })} className="alert-sel" style={{ color: ALERT_COLORS[fld.alertLevel || 'NOTE'] }}>
+                            {ALERT_LEVELS.map(l => <option key={l} value={l}>{l}</option>)}
+                          </select>
+                        </div>
+                        <input value={fld.placeholder || ''} onChange={e => upFld(sec.id, fld.id, { placeholder: e.target.value })} placeholder="Texto de ejemplo de la alerta..." style={inp} />
+                        <div style={{ fontSize: '0.66rem', color: '#3f3f46' }}>
+                          Genera <code style={{ fontSize: '0.65rem', background: '#18181b', padding: '1px 4px', borderRadius: '3px', color: '#fb923c' }}>{`> [!${fld.alertLevel || 'NOTE'}]`}</code> — compatible con GitHub GFM
+                        </div>
+                      </div>
+                    )}
+
+                    {fld.type === 'collapsible' && (
+                      <div style={{ display: 'flex', flexDirection: 'column', gap: '6px', marginBottom: '6px' }}>
+                        <input value={fld.summaryPlaceholder || ''} onChange={e => upFld(sec.id, fld.id, { summaryPlaceholder: e.target.value })} placeholder="Placeholder del título (summary)..." style={inp} />
+                        <input value={fld.placeholder || ''} onChange={e => upFld(sec.id, fld.id, { placeholder: e.target.value })} placeholder="Placeholder del contenido interior..." style={inp} />
+                        <div style={{ fontSize: '0.66rem', color: '#3f3f46' }}>
+                          Genera <code style={{ fontSize: '0.65rem', background: '#18181b', padding: '1px 4px', borderRadius: '3px', color: '#fb923c' }}>{'<details><summary>'}</code>
+                        </div>
+                      </div>
+                    )}
+
+                    {fld.type === 'badges' && (
+                      <div style={{ display: 'flex', flexDirection: 'column', gap: '6px', marginBottom: '6px' }}>
+                        <div style={{ fontSize: '0.72rem', color: '#71717a', marginBottom: '2px' }}>Badges predefinidos del template (el usuario agrega los suyos al generar):</div>
+                        {(fld.defaultBadges || []).map((b, bi) => (
+                          <div key={bi} style={{ display: 'flex', gap: '6px' }}>
+                            <input value={b.label || ''} onChange={e => { const nb=[...fld.defaultBadges]; nb[bi]={...nb[bi],label:e.target.value}; upFld(sec.id,fld.id,{defaultBadges:nb}); }} placeholder="Label" style={{ ...inp, flex: 1 }} />
+                            <input value={b.color || 'blue'} onChange={e => { const nb=[...fld.defaultBadges]; nb[bi]={...nb[bi],color:e.target.value}; upFld(sec.id,fld.id,{defaultBadges:nb}); }} placeholder="Color" style={{ ...inp, width: '80px', flex: 'none' }} />
+                            <button onClick={() => upFld(sec.id,fld.id,{defaultBadges:fld.defaultBadges.filter((_,i)=>i!==bi)})} style={{ background:'none',border:'1px solid #27272a',borderRadius:'6px',color:'#3f3f46',cursor:'pointer',padding:'5px 8px',display:'flex' }}><X size={12}/></button>
+                          </div>
+                        ))}
+                        <button onClick={() => upFld(sec.id,fld.id,{defaultBadges:[...(fld.defaultBadges||[]),{label:'',color:'blue'}]})} style={{ display:'flex',alignItems:'center',gap:'5px',background:'none',border:'1px dashed #27272a',borderRadius:'6px',color:'#52525b',cursor:'pointer',padding:'5px 12px',fontSize:'0.72rem',fontFamily:"'Manrope',sans-serif" }}>
+                          <Plus size={11}/> Agregar badge
+                        </button>
+                      </div>
+                    )}
+
+                    {fld.type === 'video' && (
+                      <div style={{ display: 'flex', flexDirection: 'column', gap: '6px', marginBottom: '6px' }}>
+                        <input value={fld.placeholder || ''} onChange={e => upFld(sec.id, fld.id, { placeholder: e.target.value })} placeholder="URL de ejemplo del video..." style={inp} />
+                        <div style={{ fontSize: '0.66rem', color: '#3f3f46' }}>🎬 El usuario puede poner thumbnail y texto. GitHub no soporta embed real.</div>
+                      </div>
+                    )}
+
+                    {fld.type === 'blocks' && (
+                      <div style={{ fontSize: '0.72rem', color: '#71717a', padding: '8px 0', display:'flex', alignItems:'center', gap:'6px' }}>
+                        <AlignLeft size={12} color="#52525b"/> Editor de bloques rich content — el usuario agrega texto, código, imágenes, alertas, toggles y más en cualquier orden.
                       </div>
                     )}
 
@@ -1379,6 +1513,82 @@ function Generator({ template, onBack }) {
                     <ImageFieldEditor field={fld} value={fd[fld.key]} onChange={v => setVal(fld.key, v)} />
                   ) : fld.type === 'table' ? (
                     <TableFieldEditor field={fld} value={fd[fld.key]} onChange={v => setVal(fld.key, v)} />
+                  ) : fld.type === 'code' ? (
+                    <div style={{ display:'flex', flexDirection:'column', gap:'6px' }}>
+                      <div style={{ display:'flex', gap:'8px', alignItems:'center' }}>
+                        <select className="lang-sel"
+                          value={fd[fld.key+'_lang'] || fld.lang || 'cpp'}
+                          onChange={e => setVal(fld.key+'_lang', e.target.value)}>
+                          {CODE_LANGS.map(l => <option key={l} value={l}>{l}</option>)}
+                        </select>
+                        <span style={{ fontSize:'0.68rem', color:'#3f3f46' }}>Lenguaje del bloque</span>
+                      </div>
+                      <textarea rows={5} value={fd[fld.key]||''} onChange={e => setVal(fld.key, e.target.value)}
+                        placeholder={fld.placeholder || `// Código ${fld.lang||'cpp'}`}
+                        style={{ ...inp, fontFamily:"'JetBrains Mono',monospace", fontSize:'0.76rem', background:'#0a0a0c', color:'#a1a1aa', lineHeight:'1.6', resize:'vertical' }} />
+                    </div>
+                  ) : fld.type === 'alert' ? (
+                    <div style={{ display:'flex', flexDirection:'column', gap:'6px' }}>
+                      <div style={{ display:'flex', gap:'8px', alignItems:'center' }}>
+                        <select className="alert-sel"
+                          value={fd[fld.key+'_level'] || fld.alertLevel || 'NOTE'}
+                          onChange={e => setVal(fld.key+'_level', e.target.value)}
+                          style={{ color: ALERT_COLORS[fd[fld.key+'_level'] || fld.alertLevel || 'NOTE'] }}>
+                          {ALERT_LEVELS.map(l => <option key={l} value={l}>{l}</option>)}
+                        </select>
+                        <span style={{ fontSize:'0.68rem', color:'#3f3f46' }}>Nivel de la alerta</span>
+                      </div>
+                      <textarea rows={2} value={fd[fld.key]||''} onChange={e => setVal(fld.key, e.target.value)}
+                        placeholder={fld.placeholder || 'Mensaje de la alerta...'}
+                        style={{ ...inp, borderColor: ALERT_COLORS[fd[fld.key+'_level'] || fld.alertLevel || 'NOTE']+'44', lineHeight:'1.6' }} />
+                    </div>
+                  ) : fld.type === 'collapsible' ? (
+                    <div style={{ display:'flex', flexDirection:'column', gap:'6px' }}>
+                      <input value={fd[fld.key+'_summary']||''} onChange={e => setVal(fld.key+'_summary', e.target.value)}
+                        placeholder={fld.summaryPlaceholder || 'Título del toggle (summary)...'}
+                        style={{ ...inp, borderColor:'#06b6d4'+'44' }} />
+                      <textarea rows={3} value={fd[fld.key]||''} onChange={e => setVal(fld.key, e.target.value)}
+                        placeholder={fld.placeholder || 'Contenido interior (se muestra al expandir)...'}
+                        style={{ ...inp, lineHeight:'1.6', resize:'vertical' }} />
+                      <div style={{ fontSize:'0.67rem', color:'#3f3f46' }}>Genera <code style={{fontSize:'0.65rem',background:'#18181b',padding:'1px 4px',borderRadius:'3px',color:'#fb923c'}}>{'<details><summary>'}</code></div>
+                    </div>
+                  ) : fld.type === 'badges' ? (
+                    <div style={{ display:'flex', flexDirection:'column', gap:'6px' }}>
+                      <textarea rows={3} value={fd[fld.key]||''} onChange={e => setVal(fld.key, e.target.value)}
+                        placeholder={"Una por línea. Formato: Label:valor:color\nEj: Estado:Completado:success\nEj: Licencia:MIT:blue"}
+                        style={{ ...inp, lineHeight:'1.6', resize:'vertical', fontFamily:"'JetBrains Mono',monospace", fontSize:'0.74rem' }} />
+                      <div style={{ fontSize:'0.67rem', color:'#3f3f46' }}>
+                        Formato: <code style={{fontSize:'0.65rem',background:'#18181b',padding:'1px 4px',borderRadius:'3px',color:'#fb923c'}}>Label:valor:color</code> — colores: blue, green, red, orange, yellow, success, critical
+                      </div>
+                      {fd[fld.key] && (
+                        <div style={{ display:'flex', flexWrap:'wrap', gap:'4px', padding:'8px', background:'#0d0d0f', borderRadius:'6px' }}>
+                          {fd[fld.key].split('\n').filter(x=>x.trim()).map((b,i) => {
+                            if (b.startsWith('http') || b.startsWith('![')) return <img key={i} src={b.replace(/^!\[.*?\]\(/,'').replace(/\)$/,'')} alt="badge" style={{height:'20px'}} onError={e=>e.target.style.display='none'}/>;
+                            const parts = b.split(':');
+                            const label = encodeURIComponent(parts[0]||'');
+                            const val2  = encodeURIComponent(parts[1]||'');
+                            const color = (parts[2]||'blue').trim();
+                            return <img key={i} src={`https://img.shields.io/badge/${label}-${val2}-${color}`} alt={parts[0]} style={{height:'20px'}} onError={e=>e.target.style.display='none'}/>;
+                          })}
+                        </div>
+                      )}
+                    </div>
+                  ) : fld.type === 'video' ? (
+                    <div style={{ display:'flex', flexDirection:'column', gap:'6px' }}>
+                      <input value={fd[fld.key]||''} onChange={e => setVal(fld.key, e.target.value)}
+                        placeholder={fld.placeholder || 'URL del video (YouTube, etc.)'}
+                        style={inp} />
+                      <input value={fd[fld.key+'_thumb']||''} onChange={e => setVal(fld.key+'_thumb', e.target.value)}
+                        placeholder="URL del thumbnail (opcional)" style={{ ...inp, fontSize:'0.76rem' }} />
+                      <input value={fd[fld.key+'_label']||''} onChange={e => setVal(fld.key+'_label', e.target.value)}
+                        placeholder="Texto del link (ej: Ver demo)" style={{ ...inp, fontSize:'0.76rem' }} />
+                      {fd[fld.key+'_thumb'] && (
+                        <div style={{ background:'#0d0d0f', borderRadius:'6px', padding:'8px', textAlign:'center' }}>
+                          <img src={fd[fld.key+'_thumb']} alt="thumb" style={{ maxHeight:'80px', borderRadius:'5px', objectFit:'contain' }} onError={e=>e.target.style.display='none'} />
+                        </div>
+                      )}
+                      <div style={{ fontSize:'0.67rem', color:'#3f3f46' }}>💡 GitHub no soporta embed. Se genera imagen clickeable o link 🎬</div>
+                    </div>
                   ) : fld.type === 'textarea' || fld.type === 'list' ? (
                     <>
                       <textarea
