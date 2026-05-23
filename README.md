@@ -1,7 +1,7 @@
 # README Manager
 
 ![Status](https://img.shields.io/badge/Status-Active-success)
-![License](https://img.shields.io/badge/License-CC%20BY--NC%204.0-orange)
+![License](https://img.shields.io/badge/license-%20%20GNU%20GPLv3%20-green?style=plastic)
 ![React](https://img.shields.io/badge/React-18-61dafb)
 ![Vite](https://img.shields.io/badge/Vite-6-646cff)
 
