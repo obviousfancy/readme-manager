@@ -128,10 +128,7 @@ La app queda disponible en `https://obviousfancy.github.io/readme-manager/`
 
 ## 📄 Licencia y Uso Comercial
 
-Este proyecto está licenciado bajo la **Licencia Creative Commons Atribución-NoComercial 4.0 Internacional (CC BY-NC 4.0)**.
-
-* **Uso permitido:** Eres completamente libre de usar, bifurcar (fork), modificar y adaptar este generador para fines personales, educativos o herramientas internas comunitarias de código abierto, siempre y cuando mantengas la atribución obligatoria al autor original.
-* **Uso Comercial y Regalías:** Queda estrictamente prohibida la explotación comercial de este software, su código o derivados (como integrarlo en plataformas SaaS de pago, empaquetarlo como producto comercial o monetizar el servicio de generación) sin autorización previa. Si estás interesado en adquirir una **licencia comercial separada** o acordar un esquema de regalías, por favor ponte en contacto conmigo.
+Este proyecto está licenciado bajo la **GNU GPL v3.0**.
 
 ---
 
